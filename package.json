@@ -9,6 +9,7 @@
     "dw-backbone": "^0.1.2",
     "express": "^4.14.0",
     "handlebars": "^4.0.5",
+    "jquery": "^3.1.1",
     "morgan": "^1.7.0",
     "requirejs": "^2.3.2",
     "requirejs-text": "^2.0.12",
