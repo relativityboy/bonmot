@@ -99,9 +99,7 @@ define([
 
     findControlElements:function() {
       this.$ctrl = {};
-      console.log(this.$el[0])
       _.each(this.ctrlElementClasses, function(cssExpr,key) {
-        console.log(cssExpr)
         this.$ctrl[key] = this.$elf(cssExpr);
       }, this);
     },
@@ -209,7 +207,7 @@ define([
 
     if(!subView.events) {
       subView.events = {};
-    };
+    }
     subView.ctrlElementClasses = {};
 
     _.each(subView, function(fn, fnName) {
@@ -242,10 +240,12 @@ define([
      */
     if(!subView.hasOwnProperty('bindings')) {
       subView.bindings = {};
-    };
+    }
+
     if(!subView.hasOwnProperty('uiBindings')) {
       subView.uiBindings = [];
-    };
+    }
+
     if(subView.uiBindings.constructor !== Array) {
       throw new Error('uiBindings for view must be Array', subView);
     }
@@ -253,10 +253,10 @@ define([
       if(typeof binder === 'string') {
         binder = {
           observe:binder
-        }
+        };
       }
       if(!binder.hasOwnProperty('observe')) {
-        console.log('Error when constructing bindings. Cannot locate .observe:', binder, 'on view declaration:', subView)
+        console.log('Error when constructing bindings. Cannot locate .observe:', binder, 'on view declaration:', subView);
         throw new Error('Error when constructing bindings. Cannot locate attribute name to observe on view declaration. See log statement');
       }
 
