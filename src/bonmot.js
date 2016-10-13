@@ -14,7 +14,9 @@ define([
   DWBackbone
 ) {
   var _export = _.clone(DWBackbone),
-    View;
+    View,
+    vTemp, //here because pointers are a terrible thing to waste
+    uniques = {};
 
   //ROOT VIEW
   View = _export.View = Backbone.View.extend({
@@ -32,6 +34,19 @@ define([
      * with the horrors of Angular.
      */
     classSuffix:'',
+
+    /**
+     * This is a unique string or function that identifies this type of view.
+     * You can think of it as a code-accessible class name. Leave undeclared if you don't care.
+     *
+     * String Definition: may be mixed case and contain dots or dashes.
+     *
+     * If a function, function should return a string conforming to String Definition
+     *
+     * String will be injected into the view's root node as a
+     * css class. Before injection, dots are transformed to dashes.
+     */
+    unique:'',
 
     /**
      * convenience function for finding elements within this view. Use it!
@@ -62,12 +77,23 @@ define([
         }
         this.$el = $el;//needed for $elf & findControlElements
         this.findControlElements();
+        this.injectUnique();
       }
 
       Backbone.View.apply(this, arguments);
 
       if(this.model) {
         this.stickit();
+      }
+    },
+
+    injectUnique:function() {
+      if(this.unique && this.$el) {
+        if(typeof this.unique === 'function') {
+          this.$el.addClass(this.unique().split('.').join('-'));
+        } else {
+          this.$el.addClass(this.unique.split('.').join('-'));
+        }
       }
     },
 
@@ -90,6 +116,11 @@ define([
       }
       this.model.views.push(this);
     },
+    /**
+     * If true and the view's model's 'dispose' function is called,
+     * this view's 'remove' function will be called, removing it from the DOM.
+     */
+    needsModel:false,
 
     /**
      * Sets a model on this view and binds the model's attributes to the view.
@@ -149,7 +180,17 @@ define([
    * @param childView
    * @returns {*}
    */
-  View.extend = function(childView) {
+  var v;
+  View.extend = function(subView) {
+    /**
+     * A unique check. Is this thing really unique within the BonMot Universe?
+     */
+    if(subView.unique) {
+      if(uniques.hasOwnProperty(subView.unique)) {
+        throw new Error('BonMot error when extending subView.unique ' + subView.unique + '. A subview with that name already exists:', uniques[subView.unique]);
+      }
+    }
+
     /**
      * Creates automatic event binding for functions conforming to
      *  ctrl[<Eventtype>]SomeName
@@ -157,21 +198,21 @@ define([
      *  w-ctrl-someName
      * @type {string}
      */
-    var classSuffix = (childView.hasOwnProperty('classSuffix')) ? '-' + childView.classSuffix : '',
+    var classSuffix = (subView.hasOwnProperty('classSuffix')) ? '-' + subView.classSuffix : '',
       ctrlNameFragment, event, eventExpression, fnNameFragments;
 
     /**
      * Add atrViews declaration if it doesn't exist.
      * @type {{}}
      */
-    childView.atrViews = (childView.hasOwnProperty('atrViews'))? childView.atrViews : {};
+    subView.atrViews = (subView.hasOwnProperty('atrViews'))? subView.atrViews : {};
 
-    if(!childView.events) {
-      childView.events = {};
+    if(!subView.events) {
+      subView.events = {};
     };
-    childView.ctrlElementClasses = {};
+    subView.ctrlElementClasses = {};
 
-    _.each(childView, function(fn, fnName) {
+    _.each(subView, function(fn, fnName) {
       if((typeof fn === 'function') && (fnName.indexOf('ctrl') === 0)) {
         event = 'click';
         fnNameFragments = DWBackbone.toUnderscored(fnName.substring(4)).split('_');
@@ -187,11 +228,11 @@ define([
         ctrlNameFragment = DWBackbone.toCamel(fnNameFragments.join('_'));
 
         ctrlNameFragment = ctrlNameFragment.replace(ctrlNameFragment.charAt(0), ctrlNameFragment.charAt(0).toLowerCase());
-        childView.ctrlElementClasses[ctrlNameFragment] = '.w-ctrl-' + ctrlNameFragment + classSuffix;
-        eventExpression = event + ' ' + childView.ctrlElementClasses[ctrlNameFragment];
+        subView.ctrlElementClasses[ctrlNameFragment] = '.w-ctrl-' + ctrlNameFragment + classSuffix;
+        eventExpression = event + ' ' + subView.ctrlElementClasses[ctrlNameFragment];
 
-        if(!childView.events.hasOwnProperty(eventExpression)) {
-          childView.events[eventExpression] = fnName;
+        if(!subView.events.hasOwnProperty(eventExpression)) {
+          subView.events[eventExpression] = fnName;
         }
       }
     });
@@ -199,23 +240,23 @@ define([
     /**
      * Take .uiBindings list and translate into 'stickit' style bindings
      */
-    if(!childView.hasOwnProperty('bindings')) {
-      childView.bindings = {};
+    if(!subView.hasOwnProperty('bindings')) {
+      subView.bindings = {};
     };
-    if(!childView.hasOwnProperty('uiBindings')) {
-      childView.uiBindings = [];
+    if(!subView.hasOwnProperty('uiBindings')) {
+      subView.uiBindings = [];
     };
-    if(childView.uiBindings.constructor !== Array) {
-      throw new Error('uiBindings for view must be Array', childView);
+    if(subView.uiBindings.constructor !== Array) {
+      throw new Error('uiBindings for view must be Array', subView);
     }
-    _.each(childView.uiBindings, function(binder) {
+    _.each(subView.uiBindings, function(binder) {
       if(typeof binder === 'string') {
         binder = {
           observe:binder
         }
       }
       if(!binder.hasOwnProperty('observe')) {
-        console.log('Error when constructing bindings. Cannot locate .observe:', binder, 'on view declaration:', childView)
+        console.log('Error when constructing bindings. Cannot locate .observe:', binder, 'on view declaration:', subView)
         throw new Error('Error when constructing bindings. Cannot locate attribute name to observe on view declaration. See log statement');
       }
 
@@ -223,13 +264,16 @@ define([
         binder.find = '.w-atr-' + binder.observe + classSuffix;
       }
 
-      if(!childView.bindings.hasOwnProperty(binder.find)) {
-        childView.bindings[binder.find] = binder;
+      if(!subView.bindings.hasOwnProperty(binder.find)) {
+        subView.bindings[binder.find] = binder;
         delete binder.find;
       }
     });
 
-    return ViewExtend.call(View, childView);
+
+    vTemp = ViewExtend.call(View, subView);
+    uniques[subView.unique] = vTemp;
+    return vTemp;
   };
 
   _export.Model = DWBackbone.Model.extend({});

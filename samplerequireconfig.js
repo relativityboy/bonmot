@@ -37,4 +37,6 @@ require.config({
     //compilerPath: "/static/common/handlebars/handlebars-4.0.5",
     compilerPath: "handlebars",
   }
+  //You'll note though using a css bundler is a great idea, one is not included in this example,
+  //as I've not yet found a solution that I love.
 });
