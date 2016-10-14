@@ -21,7 +21,6 @@ define([
   //ROOT VIEW
   View = _export.View = Backbone.View.extend({
     parent:false,
-
     /**
      *
      */
@@ -59,7 +58,8 @@ define([
 
     constructor: function(options) {
       var $el;
-      if (arguments.length > 0) {
+      this.childViews = {};
+      if(arguments.length > 0) {
         if(arguments[0].hasOwnProperty('parent')) {
           this.parent = arguments[0].parent;
         }
@@ -70,7 +70,7 @@ define([
       if(typeof this.hbs === 'function') {
         if(options.el) {
           $el = jQuery(options.el);
-          $el.append(this.hbs());
+          $el.html(this.hbs());
         } else {
           $el = jQuery(this.hbs());
           options.el = $el[0];
@@ -85,6 +85,7 @@ define([
       if(this.model) {
         this.stickit();
       }
+      this.initChildViews();
     },
 
     injectUnique:function() {
@@ -101,6 +102,38 @@ define([
       this.$ctrl = {};
       _.each(this.ctrlElementClasses, function(cssExpr,key) {
         this.$ctrl[key] = this.$elf(cssExpr);
+      }, this);
+    },
+    /**
+     * Should be callable multiple times.
+     */
+    initChildViews:function() {
+      var atrs = (this.hasOwnProperty('model'))? this.model.attributes : {};
+
+      _.each(this.atrViews, function(init, atrName) {
+        if(!this.childViews.hasOwnProperty(atrName)) {
+          if(atrs.hasOwnProperty(atrName) || init.view.needsModel === false) {
+            this.newChildView(atrName, init, atrs[atrName]);
+          }
+        } else {
+          this.childViews[atrName].setModel(atrs[atrName]);
+        }
+      }, this);
+    },
+
+    newChildView:function(atrName, init, model) {
+      if(model) {
+        this.childViews[atrName] = new init.view({el:this.$elf(init.find)[0], model:model, parentView:this});
+      } else {
+        this.childViews[atrName] = new init.view({el:this.$elf(init.find)[0], parentView:this});
+      }
+      this.childViews[atrName].on('remove', function() {
+        this.childViews[atrName].off(null, null, this);
+        delete this.childViews[atrName];
+      }, this);
+
+      this.model.on('change:' + atrName, function(x, model){
+        this.childViews[atrName].setModel(model);
       }, this);
     },
 
@@ -123,27 +156,34 @@ define([
     /**
      * Sets a model on this view and binds the model's attributes to the view.
      * If a model was already set on the view, it is unset, and unbound.
-     * ** Nested views and models must be handled manually at this time.
+     * ** Nested views and models must be handled manually at this time via the 'unsetModel' and 'setModel' events.
      * @param model
      * @returns {_exports.View}
      */
     setModel:function(model) {
-      this.unsetModel();
-      if(model) {
-        if(model) {
-          this.model = model;
-        }
+      if(model === this.model) {
+        return this;
       }
-      this.model = model;
-      this.setViewOnModel();
-      this.trigger('setModel', model, this);
-      this.stickit();
+      this._unsetModel();
+      if(model) {
+        this.model = model;
+        this.setViewOnModel();
+        this.trigger('setModel', model, this);
+        this.stickit();
+      } else if(this.needsModel) {
+        return this.remove();
+      }
+
       return this;
     },
     /**
-     * Unbinds and unsets the current model from this view.
+     * Internal function. Use setModel(undefined) instead!
+     *
+     * Unbinds and unsets the current model from this view. May also trigger removal of
+     * view from DOM.
+     * @returns {boolean/Model}
      */
-    unsetModel: function() {
+    _unsetModel: function() {
       var model = false;
       if(this.model) {
         this.model.off(null, null, this);
@@ -163,8 +203,12 @@ define([
       return model;
     },
     remove:function() {
-      this.unsetModel();
-      Backbone.View.prototype.remove.call(this);
+      if(this.model) {
+        this._unsetModel();
+      }
+      this.trigger('remove', this);
+      this.off(null, null, null);
+      return Backbone.View.prototype.remove.call(this);
     }
   });
 
@@ -178,7 +222,6 @@ define([
    * @param childView
    * @returns {*}
    */
-  var v;
   View.extend = function(subView) {
     /**
      * A unique check. Is this thing really unique within the BonMot Universe?
@@ -188,7 +231,6 @@ define([
         throw new Error('BonMot error when extending subView.unique ' + subView.unique + '. A subview with that name already exists:', uniques[subView.unique]);
       }
     }
-
     /**
      * Creates automatic event binding for functions conforming to
      *  ctrl[<Eventtype>]SomeName
@@ -201,9 +243,20 @@ define([
 
     /**
      * Add atrViews declaration if it doesn't exist.
+     * atrViews defines the which attributes get their own views automagically.
      * @type {{}}
      */
     subView.atrViews = (subView.hasOwnProperty('atrViews'))? subView.atrViews : {};
+    _.each(subView.atrViews, function(viewDeclaration, atrName) {
+      if(typeof viewDeclaration === 'function') {
+        subView.atrViews[atrName] = {
+          find:'.w-atr-' + atrName + classSuffix,
+          view:viewDeclaration
+        };
+      } else if(typeof viewDeclaration !== 'object' || viewDeclaration.hasOwnProperty('find') === false || viewDeclaration.hasOwnProperty('view') === false) {
+        throw new Error('atrViews has bad declaration', viewDeclaration);
+      }
+    });
 
     if(!subView.events) {
       subView.events = {};
@@ -241,11 +294,9 @@ define([
     if(!subView.hasOwnProperty('bindings')) {
       subView.bindings = {};
     }
-
     if(!subView.hasOwnProperty('uiBindings')) {
       subView.uiBindings = [];
     }
-
     if(subView.uiBindings.constructor !== Array) {
       throw new Error('uiBindings for view must be Array', subView);
     }
@@ -269,7 +320,6 @@ define([
         delete binder.find;
       }
     });
-
 
     vTemp = ViewExtend.call(View, subView);
     uniques[subView.unique] = vTemp;
