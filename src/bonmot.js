@@ -22,9 +22,10 @@ define([
   View = _export.View = Backbone.View.extend({
     parent:false,
     /**
-     *
+     * Handlebars Template. Called when the view is instantiated.
      */
     hbs:false,
+
 
     /**
      * Used to locate properly suffixed attribute or control elements within the views root DOM node.
@@ -57,7 +58,9 @@ define([
     },
 
     constructor: function(options) {
-      var $el;
+      options = (options)? options : {};
+      var $el, hbsData;
+
       this.childViews = {};
       if(arguments.length > 0) {
         if(arguments[0].hasOwnProperty('parent')) {
@@ -68,11 +71,12 @@ define([
         this.options = {};
       }
       if(typeof this.hbs === 'function') {
+        hbsData = (options.model && options.model.toJSON)? options.model.toJSON(): {};
         if(options.el) {
           $el = jQuery(options.el);
-          $el.html(this.hbs());
+          $el.html(this.hbs(hbsData));
         } else {
-          $el = jQuery(this.hbs());
+          $el = jQuery(this.hbs(hbsData));
           options.el = $el[0];
         }
         this.$el = $el;//needed for $elf & findControlElements
@@ -164,11 +168,18 @@ define([
       if(model === this.model) {
         return this;
       }
-      this._unsetModel();
+      this._unsetModel(model);
       if(model) {
         this.model = model;
         this.setViewOnModel();
+        _.each(this.childViews, function(view, atrName) {
+          view.setModel(this.model.get(atrName));
+          this.model.on('change:' + atrName, function(x, model){
+            this.childViews[atrName].setModel(model);
+          }, this);
+        }, this);
         this.trigger('setModel', model, this);
+
         this.stickit();
       } else if(this.needsModel) {
         return this.remove();
@@ -181,9 +192,10 @@ define([
      *
      * Unbinds and unsets the current model from this view. May also trigger removal of
      * view from DOM.
+     * @param newModel - used only to test if the model should call .setModel(undefined) on child models.
      * @returns {boolean/Model}
      */
-    _unsetModel: function() {
+    _unsetModel: function(newModel) {
       var model = false;
       if(this.model) {
         this.model.off(null, null, this);
@@ -196,25 +208,32 @@ define([
             }
           }
         }
-        this.trigger('unsetModel', model, this);
+        if(!newModel) {
+          _.each(this.childViews, function(view) {
+            view.setModel();
+          });
+        }
         model = this.model;
         delete this.model;
+        this.trigger('unsetModel', model, this);
       }
       return model;
     },
     remove:function() {
-      if(this.model) {
-        this._unsetModel();
-      }
+      this._unsetModel();
+
       this.trigger('remove', this);
       this.off(null, null, null);
+      _.each(this.childViews, function(view) {
+        view.off(null,null,this);
+        view.remove();
+      }, this);
       return Backbone.View.prototype.remove.call(this);
     }
   });
 
   var ViewExtend = View.extend;
 
-  //TODO: test this new extend functionality
   /**
    * Preprocessor to support Bon-Mot functionality.
    * 1. processes 'ctrl' prefixed functions and adds them to the events binding object
@@ -223,47 +242,16 @@ define([
    * @returns {*}
    */
   View.extend = function(subView) {
-    /**
-     * A unique check. Is this thing really unique within the BonMot Universe?
-     */
-    if(subView.unique) {
-      if(uniques.hasOwnProperty(subView.unique)) {
-        throw new Error('BonMot error when extending subView.unique ' + subView.unique + '. A subview with that name already exists:', uniques[subView.unique]);
-      }
-    }
-    /**
-     * Creates automatic event binding for functions conforming to
-     *  ctrl[<Eventtype>]SomeName
-     * where html css classes on dom elements to be bound are
-     *  w-ctrl-someName
-     * @type {string}
-     */
-    var classSuffix = (subView.hasOwnProperty('classSuffix')) ? '-' + subView.classSuffix : '',
-      ctrlNameFragment, event, eventExpression, fnNameFragments;
 
-    /**
-     * Add atrViews declaration if it doesn't exist.
-     * atrViews defines the which attributes get their own views automagically.
-     * @type {{}}
-     */
-    subView.atrViews = (subView.hasOwnProperty('atrViews'))? subView.atrViews : {};
-    _.each(subView.atrViews, function(viewDeclaration, atrName) {
-      if(typeof viewDeclaration === 'function') {
-        subView.atrViews[atrName] = {
-          find:'.w-atr-' + atrName + classSuffix,
-          view:viewDeclaration
-        };
-      } else if(typeof viewDeclaration !== 'object' || viewDeclaration.hasOwnProperty('find') === false || viewDeclaration.hasOwnProperty('view') === false) {
-        throw new Error('atrViews has bad declaration', viewDeclaration);
-      }
-    });
+    var classSuffix = (subView.classSuffix) ? '-' + subView.classSuffix : '',
+      parentClassSuffix = (this.prototype.classSuffix) ? '-' + subView.classSuffix : '';
 
-    if(!subView.events) {
-      subView.events = {};
-    }
-    subView.ctrlElementClasses = {};
-
-    _.each(subView, function(fn, fnName) {
+    //declared here to make use of classSuffix
+    var ctrlEvents = function(fn, fnName) {
+      var ctrlNameFragment,
+        event,
+        eventExpression,
+        fnNameFragments;
       if((typeof fn === 'function') && (fnName.indexOf('ctrl') === 0)) {
         event = 'click';
         fnNameFragments = DWBackbone.toUnderscored(fnName.substring(4)).split('_');
@@ -279,14 +267,52 @@ define([
         ctrlNameFragment = DWBackbone.toCamel(fnNameFragments.join('_'));
 
         ctrlNameFragment = ctrlNameFragment.replace(ctrlNameFragment.charAt(0), ctrlNameFragment.charAt(0).toLowerCase());
-        subView.ctrlElementClasses[ctrlNameFragment] = '.w-ctrl-' + ctrlNameFragment + classSuffix;
-        eventExpression = event + ' ' + subView.ctrlElementClasses[ctrlNameFragment];
+        this.ctrlElementClasses[ctrlNameFragment] = '.w-ctrl-' + ctrlNameFragment + classSuffix;
+        eventExpression = event + ' ' + this.ctrlElementClasses[ctrlNameFragment];
 
-        if(!subView.events.hasOwnProperty(eventExpression)) {
-          subView.events[eventExpression] = fnName;
+        if(!this.events.hasOwnProperty(eventExpression)) {
+          this.events[eventExpression] = fnName;
         }
       }
-    });
+    };
+
+    /**
+     * atrViews defines the which attributes get their own views automagically.
+     *
+     * if it exists, format it with appropriate declarations
+     * else - create a blank, and inherit any atrViews from this view's parent, correcting the css find as appropriate.
+     * @type {{}}
+     */
+    if(subView.hasOwnProperty('atrViews')) {
+      _.each(subView.atrViews, function (viewDeclaration, atrName) {
+        if (typeof viewDeclaration === 'function') {
+          subView.atrViews[atrName] = {
+            find: '.w-atr-' + atrName + classSuffix,
+            view: viewDeclaration
+          };
+        } else if (typeof viewDeclaration !== 'object' || viewDeclaration.hasOwnProperty('find') === false || viewDeclaration.hasOwnProperty('view') === false) {
+          throw new Error('atrViews has bad declaration', viewDeclaration);
+        }
+      });
+    } else {
+      subView.atrViews = {};
+      if(this.prototype.atrViews) {
+        _.each(this.prototype.atrViews, function (viewDeclaration, atrName) {
+          subView.atrViews[atrName] = _.clone(viewDeclaration);
+          if(subView.atrViews[atrName].find === '.w-atr-' + atrName + parentClassSuffix) {
+            subView.atrViews[atrName].find = '.w-atr-' + atrName + classSuffix;
+          }
+        }, this);
+      }
+    }
+
+    if(!subView.events) {
+      subView.events = {};
+    }
+    subView.ctrlElementClasses = {};
+
+    _.each(subView, ctrlEvents, subView);
+    _.each(this.prototype, ctrlEvents, subView);
 
     /**
      * Take .uiBindings list and translate into 'stickit' style bindings
@@ -295,7 +321,11 @@ define([
       subView.bindings = {};
     }
     if(!subView.hasOwnProperty('uiBindings')) {
-      subView.uiBindings = [];
+      if(this.prototype.uiBindings) {
+        subView.uiBindings = _.clone(this.prototype.uiBindings);
+      } else {
+        subView.uiBindings = [];
+      }
     }
     if(subView.uiBindings.constructor !== Array) {
       throw new Error('uiBindings for view must be Array', subView);
@@ -305,6 +335,8 @@ define([
         binder = {
           observe:binder
         };
+      } else {
+        binder = _.clone(binder);
       }
       if(!binder.hasOwnProperty('observe')) {
         console.log('Error when constructing bindings. Cannot locate .observe:', binder, 'on view declaration:', subView);
@@ -312,6 +344,8 @@ define([
       }
 
       if(!binder.hasOwnProperty('find')) {
+        binder.find = '.w-atr-' + binder.observe + classSuffix;
+      } else if(binder.find === '.w-atr-' + binder.observe + parentClassSuffix) {
         binder.find = '.w-atr-' + binder.observe + classSuffix;
       }
 
@@ -321,8 +355,16 @@ define([
       }
     });
 
-    vTemp = ViewExtend.call(View, subView);
-    uniques[subView.unique] = vTemp;
+    vTemp = ViewExtend.call(this, subView);
+    /**
+     * A unique check. Is this thing really unique within the BonMot Universe?
+     */
+    if(subView.unique) {
+      if(uniques.hasOwnProperty(subView.unique)) {
+        throw new Error('BonMot error when extending subView.unique ' + subView.unique + '. A subview with that name already exists:', uniques[subView.unique]);
+      }
+      uniques[subView.unique] = vTemp;
+    }
     return vTemp;
   };
 

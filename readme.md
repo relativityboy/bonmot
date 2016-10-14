@@ -18,10 +18,17 @@ View.extend - using BonMot results in pages that run as fast as if you'd hand-ro
  
  
 ####Attribute bindings
-*TODO:Describe attribute binding syntax*
+
+To bind a data attribute from a Model into the page, for example 'name', in the html add the class *w-atr-name* 
+to the corresponding element, and add 'name' to the uiBindings array on the view *uiBindings:['name']*
+ 
+This is enough to get you through most scenarios, but you can do a **lot** more.
 
 ####Control bindings
-*TODO:Describe function binding syntax*
+
+To add a control to the page, define a control function in your View like *ctrlMakeAllTheThings:function(){...}*
+
+Bind that control to whatever html element you like by adding the class *w-ctrl-makeAllTheThings*
 
 ####Life Cycle Managment
 *TODO:Describe View life cycle management*

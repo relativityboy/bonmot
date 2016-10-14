@@ -1,6 +1,6 @@
 {
   "name": "bonmot",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A nicely scalable web ui framework.",
   "main": "dist/bonmot.js",
   "dependencies": {
