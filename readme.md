@@ -30,10 +30,11 @@ To add a control to the page, define a control function in your View like *ctrlM
 
 Bind that control to whatever html element you like by adding the class *w-ctrl-makeAllTheThings*
 
-####Easy Nested Models and Views
+####Easy Views
 
-Declare a view, and set it as a child-view on another view via *.atrViews*. It will automatically 
-be created, and have it's model assigned and changed as the parent view's model is updated.
+Easily nest Models and Views on complex pages. Declare a view, and set it as a child-view 
+on another view via *.atrViews*. It will automatically 
+be created, and have it's model assigned and updated as the parent view's model is updated.
 
 *This works for collections too if you use BonMot based models and set the optional 
 .modelInfo attribute on the parent-view.
