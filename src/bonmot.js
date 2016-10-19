@@ -70,20 +70,20 @@ define([
       this.collection = collection;
       this.collection.each(this.newChildView, this);
       this.collection.on('add', function(model) {
-        this.newChildView(model)
+        this.newChildView(model);
       }, this);
       this.collection.on('remove', function(model) {
-        this.removeChildView(model)
+        this.removeChildView(model);
       }, this);
       this.collection.on('sort', function(){
-        var $lastEl = false
+        var $lastEl = false;
         this.collection.each(function(model, i) {
-          if(i == 0) {
+          if(i === 0) {
             this.$el.prepend(this.childViews[model.cid].$el);
           } else {
-            $lastEl.after(this.childViews[model.cid].$el)
+            $lastEl.after(this.childViews[model.cid].$el);
           }
-          $lastEl = this.childViews[model.cid].$el
+          $lastEl = this.childViews[model.cid].$el;
         }, this);
 
       }, this);
@@ -191,7 +191,7 @@ define([
       }
 
       Backbone.View.apply(this, arguments);
-      this.$el.attr('data-v-cid', this.cid)
+      this.$el.attr('data-v-cid', this.cid);
 
       if(this.model) {
         this.stickit();
@@ -489,4 +489,3 @@ define([
 
   return _.clone(_export);
 });
-

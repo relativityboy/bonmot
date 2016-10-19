@@ -241,7 +241,7 @@ define([
         options.model = model;
       }
 
-      if(this.modelInfo.prototype._setCollections[atrName]) {
+      if(this.modelInfo && this.modelInfo.prototype._setCollections[atrName]) {
         options.childView = init.view;
         this.childViews[atrName] = new _export.CollectionViewManager(options);
       } else {
