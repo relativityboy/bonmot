@@ -1,6 +1,6 @@
 {
   "name": "bonmot",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "A nicely scalable web ui framework.",
   "main": "dist/bonmot.js",
   "dependencies": {
@@ -45,7 +45,7 @@
   "author": "Donovan Walker",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/relativityboy/bonmot-view/issues"
+    "url": "https://github.com/relativityboy/bonmot/issues"
   },
-  "homepage": "https://github.com/relativityboy/bonmot-view#readme"
+  "homepage": "https://github.com/relativityboy/bonmot#readme"
 }
