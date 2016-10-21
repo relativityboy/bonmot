@@ -182,12 +182,8 @@ define([
 
       this.childViews = {};
 
-      if(options.model) {
-        if(!(options.model instanceof this.Model)) {
-          this.model = new this.Model(options.model);
-        } else {
-          this.model = options.model;
-        }
+      if(options.model && !(options.model instanceof this.Model)) {
+        options.model = new this.Model(options.model);
       }
 
       if(options.hasOwnProperty('parentView')) {
@@ -226,11 +222,11 @@ define([
 
       Backbone.View.apply(this, arguments);
 
-      if(this.model) {
-        this.injectModelCid();
-        this.stickit();
+      if(options.model) {
+        delete this.model; //because eliminating backbone side-effects
+        this.setModel(options.model);
       }
-      this.initChildViews();
+
     },
 
     injectModelCid:function() {
@@ -290,21 +286,6 @@ define([
         this.childViews[atrName].off(null, null, this);
         delete this.childViews[atrName];
       }, this);
-
-      this.model.on('change:' + atrName, function(x, model){
-        this.childViews[atrName].setModel(model);
-      }, this);
-    },
-
-    /**
-     * called by 'setModel' adds this view to a models 'views' array (creates the array if it does not exist)
-     * This allows views that use a particular model to be removed from the dom if the model is disposed.
-     */
-    setViewOnModel:function() {
-      if(!this.model.hasOwnProperty('views')) {
-        this.model.views = [];
-      }
-      this.model.views.push(this);
     },
 
     /**
@@ -318,16 +299,27 @@ define([
       if(model === this.model) {
         return this;
       }
+
       this._unsetModel(model);
       if(model) {
         this.model = model;
-        this.setViewOnModel();
+
+        this.initChildViews();
+
+        //This is outside initChildViews because we want initChildViews to be callable multiple times with no addl side
+        //effects.
         _.each(this.childViews, function(view, atrName) {
           view.setModel(this.model.get(atrName));
           this.model.on('change:' + atrName, function(x, model){
             this.childViews[atrName].setModel(model);
           }, this);
         }, this);
+
+        this.model.on('destroy', function() {
+          this.setModel();
+        }, this);
+
+
         this.injectModelCid();
         this.trigger('setModel', model, this);
         this.stickit();
@@ -410,7 +402,7 @@ define([
       if((typeof fn === 'function') && (fnName.indexOf('ctrl') === 0)) {
         event = 'click';
         fnNameFragments = DWBackbone.toUnderscored(fnName.substring(4)).split('_');
-        switch(fnNameFragments[0]) {
+        switch(fnNameFragments[0]) { //todo: support these different event types
           case 'mouseout' :
           case 'mouseover' :
           case 'keypressed' :
@@ -527,7 +519,25 @@ define([
     return vTemp;
   };
 
-  _export.Model = DWBackbone.Model.extend({});
+  _export.Model = DWBackbone.Model.extend({
+    /**
+     * This should get into DW-Backbone @ some point. Fingers crossed.
+     */
+    dispose:function() {
+      for(var i in this.attributes) if(this.hasOwnProperty(i)) {
+        if(((this.attributes[i] instanceof Backbone.Model) === true) || ((this.attributes[i] instanceof _export.Collection) === true)) {
+          try {
+            this.attributes[i].dispose();
+          } catch (e) {
+            console.log('When disposing of', this, 'child model .' + i, this.attributes[i], 'did not have dispose function');
+          }
+        }
+      }
+      this.removeParent();
+      this.trigger('dispose', this); //likely this should be eliminated in favor of everything listening for destroy.
+      this.trigger('destroy', this);
+    },
+  });
 
   return _.clone(_export);
 });
