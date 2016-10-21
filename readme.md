@@ -15,6 +15,8 @@ libraries while providing you with a much more terse, and clear way to express y
 
 One of the best-parts, because most of BonMot's magic is done when you call Model.extend and 
 View.extend - using BonMot results in pages that run as fast as if you'd hand-rolled your code.
+
+_**version 0.3.0** adds a requirement for .Model on all views! (This is the model declaration the view is to be used with)_
  
  
 ####Attribute bindings
