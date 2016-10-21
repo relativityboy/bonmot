@@ -37,6 +37,9 @@ define([
       if(!options.childView ) {
         throw new Error('A childView must be specified for CollectionViewManager');
       }
+      if(options.parentView) {
+        this.parentView = options.parentView;
+      }
 
       this.$el = $(options.el);
       this.$el.html('');
@@ -90,7 +93,8 @@ define([
     },
     newChildView:function(model) {
       this.childViews[model.cid] = new this.ChildView({
-        model:model
+        model:model,
+        parentView:this.parentView
       });
       this.$el.append(this.childViews[model.cid].$el);
     },
@@ -104,6 +108,8 @@ define([
         view.remove();
       }, this);
       this.collection.off(null,null,this);
+      delete this.options;
+      delete this.parentView;
       return Backbone.View.prototype.remove.call(this);
     }
   });
@@ -116,15 +122,20 @@ define([
      * It is recommended that the model have BonMot.Model in its prototype chain...
      * IE, the result of a BonMot.Model.extend() operation.
      */
-    modelInfo:false,
+    Model:false,
 
-    parent:false,
+    parentView:false,
+
     /**
      * Handlebars Template or other 'function callable' template. Called when the view is instantiated.
      * If model is present on construction, will also be passed a toJSON representation of the model.
      */
-    hbs:'',
+    hbs:Handlebars.compile('<div></div>'),
 
+    /**
+     * Data used to populate the HBS templates.
+     */
+    hbsData:false,
 
     /**
      * Used to locate properly suffixed attribute or control elements within the views root DOM node.
@@ -148,6 +159,12 @@ define([
     unique:'',
 
     /**
+     * If true and the view's model's 'dispose' function is called,
+     * this view's 'remove' function will be called, removing it from the DOM.
+     */
+    needsModel:false,
+
+    /**
      * convenience function for finding elements within this view. Use it!
      * @param cssExpr
      * @returns {*}
@@ -157,50 +174,71 @@ define([
     },
 
     constructor: function(options) {
+      var $el,
+        hbs = (options.hbs)? options.hbs : this.hbs,
+        hbsData = {};
+
       options = (options)? options : {};
-      var $el, hbsData;
 
       this.childViews = {};
-      if(arguments.length > 0) {
-        if(arguments[0].hasOwnProperty('parent')) {
-          this.parent = arguments[0].parent;
-        }
-        this.options = options;
-      } else {
-        this.options = {};
-      }
-      if(options.hbs) {
-        this.hbs = options.hbs;
-      }
-      if(this.hbs) {
-        if(typeof this.hbs !== 'function') {
-          this.hbs = Handlebars.compile(this.hbs);
-        }
-        hbsData = (options.model && options.model.toJSON)? options.model.toJSON(): {};
-        if(options.el) {
-          $el = jQuery(options.el);
-          $el.html(this.hbs(hbsData));
-        } else {
-          $el = jQuery(this.hbs(hbsData));
-          options.el = $el[0];
-        }
-        this.$el = $el;//needed for $elf & findControlElements
 
-        this.findControlElements();
-        this.injectUnique();
+      if(options.model) {
+        if(!(options.model instanceof this.Model)) {
+          this.model = new this.Model(options.model);
+        } else {
+          this.model = options.model;
+        }
       }
+
+      if(options.hasOwnProperty('parentView')) {
+        this.parentView = options.parentView;
+      }
+
+      if(options.el) {
+        $el = jQuery(options.el);
+        this.$el = $el;//needed for $elf & findControlElements
+      }
+
+      if (typeof hbs !== 'function') {
+        hbs = Handlebars.compile(hbs);
+      }
+      if(this.hbsData) {
+        if (this.hbsData === true && options.model) {
+          hbsData = options.model.toJSON();
+        } else {
+          hbsData = this.hbsData;
+        }
+      }
+
+      $el = jQuery(hbs(hbsData));
+
+      if(options.el) {
+        this.el = options.el;
+        this.$el = jQuery(options.el);
+        this.$el.html($el);
+      } else {
+        this.el = options.el = $el[0];
+        this.$el = $el;
+      }
+
+      this.findControlElements();
+      this.injectUnique();
 
       Backbone.View.apply(this, arguments);
-      this.$el.attr('data-v-cid', this.cid);
 
       if(this.model) {
+        this.injectModelCid();
         this.stickit();
       }
       this.initChildViews();
     },
 
+    injectModelCid:function() {
+      this.$el.attr('data-m-cid', this.model.cid);
+    },
     injectUnique:function() {
-      if(this.unique && this.$el) {
+      this.$el.attr('data-v-cid', this.cid);
+      if(this.unique) {
         if(typeof this.unique === 'function') {
           this.$el.addClass(this.unique().split('.').join('-'));
         } else {
@@ -223,7 +261,7 @@ define([
 
       _.each(this.atrViews, function(init, atrName) {
         if(!this.childViews.hasOwnProperty(atrName)) {
-          if(atrs.hasOwnProperty(atrName) || init.view.needsModel === false) {
+          if(atrs.hasOwnProperty(atrName) || init.view.prototype.needsModel === false) {
             this.newChildView(atrName, init, atrs[atrName]);
           }
         } else {
@@ -241,7 +279,7 @@ define([
         options.model = model;
       }
 
-      if(this.modelInfo && this.modelInfo.prototype._setCollections[atrName]) {
+      if(this.Model && this.Model.prototype._setCollections[atrName]) {
         options.childView = init.view;
         this.childViews[atrName] = new _export.CollectionViewManager(options);
       } else {
@@ -268,11 +306,6 @@ define([
       }
       this.model.views.push(this);
     },
-    /**
-     * If true and the view's model's 'dispose' function is called,
-     * this view's 'remove' function will be called, removing it from the DOM.
-     */
-    needsModel:false,
 
     /**
      * Sets a model on this view and binds the model's attributes to the view.
@@ -295,8 +328,8 @@ define([
             this.childViews[atrName].setModel(model);
           }, this);
         }, this);
+        this.injectModelCid();
         this.trigger('setModel', model, this);
-
         this.stickit();
       } else if(this.needsModel) {
         return this.remove();
@@ -345,6 +378,8 @@ define([
         view.off(null,null,this);
         view.remove();
       }, this);
+      delete this.options;
+      delete this.parentView;
       return Backbone.View.prototype.remove.call(this);
     }
   });
@@ -359,9 +394,12 @@ define([
    * @returns {*}
    */
   View.extend = function(subView) {
-
     var classSuffix = (subView.classSuffix) ? '-' + subView.classSuffix : '',
       parentClassSuffix = (this.prototype.classSuffix) ? '-' + subView.classSuffix : '';
+
+    if(!subView.Model && !this.prototype.Model) {
+      throw new Error('This view must define a .Model attribute that is an extension of BonMot or DWBackbone');
+    }
 
     //declared here to make use of classSuffix
     var ctrlEvents = function(fn, fnName) {
@@ -392,6 +430,10 @@ define([
         }
       }
     };
+
+    if(subView.hbs && typeof subView.hbs !== 'function') {
+      subView.hbs = Handlebars.compile(subView.hbs);
+    }
 
     /**
      * atrViews defines the which attributes get their own views automagically.
