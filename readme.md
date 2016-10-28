@@ -9,15 +9,21 @@ some of the more popular frameworks.
 
 Enter BonMot. The js app-engine for your future.
 
-BonMot removes much of the glue while still giving you control over how you create your application. 
+BonMot eliminates much of the glue while still giving you control over how you create your application. 
 Under the hood BonMot uses Stickit, Handlebars, and DW-Backbone. It gives you all the power of these
 libraries while providing you with a much more terse, and clear way to express yourself.
 
 One of the best-parts, because most of BonMot's magic is done when you call Model.extend and 
 View.extend - using BonMot results in pages that run as fast as if you'd hand-rolled your code.
 
-_**version 0.3.0** adds a requirement for .Model on all views! (This is the model declaration the view is to be used with)_
- 
+
+####Transparency
+BonMot is designed with transparency in mind. The philosophy is all of the convenience and reliability
+with none of the indirection. There may be times you need to do "*weird stuff* because management".
+Developers can get at and understand the guts of BonMot with ease, and the patterns in BonMot are such
+that 'awkward code' will stand out clearly, giving you opportunities to target tech-debt before it becomes
+a problem.
+
  
 ####Attribute bindings
 
@@ -27,13 +33,11 @@ to the corresponding element, and add 'name' to the uiBindings array on the view
 This is enough to get you through most scenarios, but you can do a **lot** more.
 
 ####Control bindings
-
 To add a control to the page, define a control function in your View like *ctrlMakeAllTheThings:function(){...}*
 
 Bind that control to whatever html element you like by adding the class *w-ctrl-makeAllTheThings*
 
 ####Easy Views
-
 Easily nest Models and Views on complex pages. Declare a view, and set it as a child-view 
 on another view via *.atrViews*. It will automatically 
 be created, and have it's model assigned and updated as the parent view's model is updated.
@@ -41,9 +45,14 @@ be created, and have it's model assigned and updated as the parent view's model 
 *This works for collections too if you use BonMot based models and set the optional 
 .modelInfo attribute on the parent-view.
 
+####Life Cycle Management
+Once your app is started, instantiating models and views can be as simple as handing a server response to 
+your root view. If the models change, so do the associated views, being updated, created, and deleted
+to reflect current state. If you need to do something peculiar, everything is easily accessible with
+classic Backbone and DW-Backbone 
 
-####Life Cycle Managment
-*TODO:Describe View life cycle management*
+####Plop-in easy
+If you have requirejs on your site, BonMot is easy to add to a small part of your page. Try it in a widget!
 
 ####Working Examples
 For an ever-evolving set of examples, see [bonmot-examples](https://github.com/relativityboy/bonmot-examples/)

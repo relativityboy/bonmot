@@ -118,7 +118,7 @@ define([
   View = _export.View = Backbone.View.extend({
     /**
      * This is the declaration of the Model 'type' to be used with this view.
-     * It is strongly recommended if this view has child views.
+     * It is strongly recommended if this view has child-views.
      * It is recommended that the model have BonMot.Model in its prototype chain...
      * IE, the result of a BonMot.Model.extend() operation.
      */
@@ -130,7 +130,7 @@ define([
      * Handlebars Template or other 'function callable' template. Called when the view is instantiated.
      * If model is present on construction, will also be passed a toJSON representation of the model.
      */
-    hbs:Handlebars.compile('<div></div>'),
+    hbs:'',
 
     /**
      * Data used to populate the HBS templates.
@@ -165,6 +165,18 @@ define([
     needsModel:false,
 
     /**
+     * If view persists on .setModel(undefined) ...
+     * Clears all inputs and content as defined in .uiBindings & .bindings.
+     * Does not affect child-views.
+     *
+     * **does this by creating a new BonMot.Model instance, calling
+     * .stickit() and .unstickit(), then destroying the model.
+     * The only negative side-effect of this is if something is listening
+     * for 'stickit' events; additional ones will be generated.
+     */
+    clearUIOnUndefinedModel:true,
+
+    /**
      * convenience function for finding elements within this view. Use it!
      * @param cssExpr
      * @returns {*}
@@ -195,7 +207,7 @@ define([
         this.$el = $el;//needed for $elf & findControlElements
       }
 
-      if (typeof hbs !== 'function') {
+      if (typeof hbs === 'string') {
         hbs = Handlebars.compile(hbs);
       }
       if(this.hbsData) {
@@ -211,7 +223,9 @@ define([
       if(options.el) {
         this.el = options.el;
         this.$el = jQuery(options.el);
-        this.$el.html($el);
+        if($el.html()) {
+          this.$el.html($el);
+        }
       } else {
         this.el = options.el = $el[0];
         this.$el = $el;
@@ -323,8 +337,15 @@ define([
         this.injectModelCid();
         this.trigger('setModel', model, this);
         this.stickit();
-      } else if(this.needsModel) {
-        return this.remove();
+      } else {
+        if(this.needsModel) {
+          return this.remove();
+        } else if(this.clearUIOnUndefinedModel) {
+          this.model = new _export.Model();
+          this.stickit();
+          this.unstickit();
+          delete this.model;
+        }
       }
 
       return this;
@@ -525,11 +546,11 @@ define([
      */
     dispose:function() {
       for(var i in this.attributes) if(this.hasOwnProperty(i)) {
-        if(((this.attributes[i] instanceof Backbone.Model) == true) || ((this.attributes[i] instanceof _export.Collection) == true)) {
+        if(((this.attributes[i] instanceof Backbone.Model) === true) || ((this.attributes[i] instanceof _export.Collection) === true)) {
           try {
             this.attributes[i].dispose();
           } catch (e) {
-            console.log('When disposing of', this, 'child model .' + i, this.attributes[i], 'did not have dispose function')
+            console.log('When disposing of', this, 'child model .' + i, this.attributes[i], 'did not have dispose function');
           }
         }
       }
@@ -538,6 +559,5 @@ define([
       this.trigger('destroy', this);
     },
   });
-
   return _.clone(_export);
 });

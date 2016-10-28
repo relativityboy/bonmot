@@ -118,7 +118,7 @@ define([
   View = _export.View = Backbone.View.extend({
     /**
      * This is the declaration of the Model 'type' to be used with this view.
-     * It is strongly recommended if this view has child views.
+     * It is strongly recommended if this view has child-views.
      * It is recommended that the model have BonMot.Model in its prototype chain...
      * IE, the result of a BonMot.Model.extend() operation.
      */
@@ -163,6 +163,18 @@ define([
      * this view's 'remove' function will be called, removing it from the DOM.
      */
     needsModel:false,
+
+    /**
+     * If view persists on .setModel(undefined) ...
+     * Clears all inputs and content as defined in .uiBindings & .bindings.
+     * Does not affect child-views.
+     *
+     * **does this by creating a new BonMot.Model instance, calling
+     * .stickit() and .unstickit(), then destroying the model.
+     * The only negative side-effect of this is if something is listening
+     * for 'stickit' events; additional ones will be generated.
+     */
+    clearUIOnUndefinedModel:true,
 
     /**
      * convenience function for finding elements within this view. Use it!
@@ -325,8 +337,15 @@ define([
         this.injectModelCid();
         this.trigger('setModel', model, this);
         this.stickit();
-      } else if(this.needsModel) {
-        return this.remove();
+      } else {
+        if(this.needsModel) {
+          return this.remove();
+        } else if(this.clearUIOnUndefinedModel) {
+          this.model = new _export.Model();
+          this.stickit();
+          this.unstickit();
+          delete this.model;
+        }
       }
 
       return this;
@@ -540,6 +559,5 @@ define([
       this.trigger('destroy', this);
     },
   });
-
   return _.clone(_export);
 });

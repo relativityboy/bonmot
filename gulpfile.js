@@ -19,10 +19,5 @@ gulp.task('scripts', function() {
     .pipe(gulp.dest('dist'))
 });
 
-// Watch Files For Changes
-gulp.task('watch', function() {
-  gulp.watch('js/*.js', ['lint', 'scripts']);
-});
-
 // Default Task
-gulp.task('default', ['lint', 'scripts', 'watch']);
+gulp.task('default', ['lint', 'scripts']);
