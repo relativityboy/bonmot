@@ -130,7 +130,7 @@ define([
      * Handlebars Template or other 'function callable' template. Called when the view is instantiated.
      * If model is present on construction, will also be passed a toJSON representation of the model.
      */
-    hbs:Handlebars.compile('<div></div>'),
+    hbs:'',
 
     /**
      * Data used to populate the HBS templates.
@@ -195,7 +195,7 @@ define([
         this.$el = $el;//needed for $elf & findControlElements
       }
 
-      if (typeof hbs !== 'function') {
+      if (typeof hbs === 'string') {
         hbs = Handlebars.compile(hbs);
       }
       if(this.hbsData) {
@@ -211,7 +211,9 @@ define([
       if(options.el) {
         this.el = options.el;
         this.$el = jQuery(options.el);
-        this.$el.html($el);
+        if($el.html()) {
+          this.$el.html($el);
+        }
       } else {
         this.el = options.el = $el[0];
         this.$el = $el;
