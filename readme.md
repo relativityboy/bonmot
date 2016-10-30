@@ -51,7 +51,7 @@ your root view. If the models change, so do the associated views, being updated,
 to reflect current state. If you need to do something peculiar, everything is easily accessible with
 classic Backbone and DW-Backbone 
 
-####Plop-in easy
+####Contained
 If you have requirejs on your site, BonMot is easy to add to a small part of your page. Try it in a widget!
 
 ####Working Examples
