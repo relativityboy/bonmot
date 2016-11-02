@@ -18,6 +18,42 @@ define([
     vTemp, //here because pointers are a terrible thing to waste
     uniques = {};
 
+
+  var AttributeRenderer = function(options) {
+    this.$el = jQuery(options.el);
+    this.hbs = options.hbs;
+    //options.model = (options.model)? options.model : {};
+    this.setModel(options.model);
+  };
+
+  AttributeRenderer.prototype.needsModel = false;
+
+  AttributeRenderer.prototype.setModel = function(object) {
+    object = (!!object)? object : {};
+    var html = '';
+    object = (object instanceof Backbone.Collection || object instanceof Backbone.Model)? object.toJSON() : object;
+    if(object.constructor === Array) {
+      for(var i = 0; i < object.length; i++) {
+        html += this.hbs(object[i]);
+      }
+    } else {
+      html = this.hbs(object);
+    }
+    this.$el.html(html);
+  };
+
+  /**
+   * Stub functions for parent view
+   */
+  AttributeRenderer.prototype.remove = function() {
+    delete this.$el;
+    delete this.hbs;
+  };
+
+  AttributeRenderer.prototype.on = function() {
+    //no-op
+  };
+
   /**
    * Manages a set of child-views created from a collection of models.
    * More specifically it is intended to be auto-invoked by a parent-View
@@ -289,7 +325,7 @@ define([
         options.model = model;
       }
 
-      if(this.Model && this.Model.prototype._setCollections[atrName]) {
+      if(!init.primitiveRender && this.Model && this.Model.prototype._setCollections[atrName] ) {
         options.childView = init.view;
         this.childViews[atrName] = new _export.CollectionViewManager(options);
       } else {
@@ -457,12 +493,23 @@ define([
      */
     if(subView.hasOwnProperty('atrViews')) {
       _.each(subView.atrViews, function (viewDeclaration, atrName) {
-        if (typeof viewDeclaration === 'function') {
+        if (viewDeclaration.prototype instanceof Backbone.View) {
           subView.atrViews[atrName] = {
             find: '.w-atr-' + atrName + classSuffix,
             view: viewDeclaration
           };
-        } else if (typeof viewDeclaration !== 'object' || viewDeclaration.hasOwnProperty('find') === false || viewDeclaration.hasOwnProperty('view') === false) {
+        } else if(typeof viewDeclaration === 'string' || typeof viewDeclaration === 'function') {
+          viewDeclaration = (typeof viewDeclaration === 'string')? Handlebars.compile(viewDeclaration) : viewDeclaration;
+
+          subView.atrViews[atrName] = {
+            find: '.w-atr-' + atrName + classSuffix,
+            view: function(options) {
+              options.hbs = viewDeclaration;
+              return new AttributeRenderer(options);
+            }
+          };
+          subView.atrViews[atrName].primitiveRender = true;
+        } else if (viewDeclaration.hasOwnProperty('find') === false || viewDeclaration.hasOwnProperty('view') === false) {
           throw new Error('atrViews has bad declaration', viewDeclaration);
         }
       });
