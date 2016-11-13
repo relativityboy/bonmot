@@ -51,4 +51,27 @@ we may want that attribute
 What about times when we do want input, or when we want to display a list of things, with checkboxes
 but then want to bind *into those* checkboxes to define a different list attribute?
 
+##Lists of things 2 - pagination
+Pagination and result limiting is something definitely worth talking about, particularly with our 
+automatic list view hydration schema. People could create pagination setups without too much difficulty
+by creating a parent view to handle the controls, page-number, etc, and using a second collection with all
+the models (or objects) from which to pull the actual information we wanted to display.
 
+Still Is there an easy way for us to automate that process? The pattern is frequent enough that we may 
+want to take care of the tedium. I should:
+1. focus on working with in-browser data (for now)
+1. have a page-length
+1. support previous & next controls
+1. support go-to input, & go-to submit control
+1. Support both 1 child-view per item, and simple html output
+1. Search (by specified field)
+
+**So how are we going to do this?**
+
+Well, clearly we're going to need a 'default' view that handles all these things.
+We'll first take the two list render views (the backbone one and the 'simple' one) and build them up 
+to support everything in the above list. the .hbs attribute being present & non-null is what will 
+cause it to branch down the more complex rendering path.
+
+While we're doing that, we'll figure out a way to have them directly addable in atrViews, and allow an 
+itemView to be declared off them (this will take the place of the atrView item)
