@@ -37,6 +37,9 @@ define([
        * These model attributes will be respectively bound to .w-atr-firstName , .w-atr-lastName , .w-atr-displayName
        */
       uiBindings:['firstName','lastName', 'displayName'],
+      ctrlTestFunction:function () {
+        this.model.set('controlValue', this.model.get("displayName"));
+      }
     });
 
     return _export;

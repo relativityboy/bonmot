@@ -21,12 +21,10 @@ module.exports = function(config) {
       {pattern: 'node_modules/backbone/**/*.js', included: false},
       {pattern: 'node_modules/jquery/**/*.js', included: false},
       {pattern: 'node_modules/handlebars/**/*.js', included: false},
-      {pattern: 'node_modules/text/**/*.js', included: false},
       {pattern: 'node_modules/backbone.stickit/backbone.stickit.js', included: false},
       {pattern: 'node_modules/dw-backbone/**/*.js', included: false},
       {pattern: 'node_modules/requirejs-text/**/*.js', included: false},
-      {pattern: 'node_modules/bonmot/**/*.js', included: false},
-      {pattern: 'node_modules/sinon/**/*.js', included: false},
+      //{pattern: 'node_modules/sinon/**/*.js', included: false},
       {pattern: 'dist/**/*.js', included: false},
       {pattern: 'test/resources/**/*', included: false},
       {pattern: 'test/**/*', included: false}
@@ -74,7 +72,7 @@ module.exports = function(config) {
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: false,
+    singleRun: true,
 
     // Concurrency level
     // how many browser should be started simultaneous
