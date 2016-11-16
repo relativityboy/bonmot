@@ -58,7 +58,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
         el:document.getElementById('example'),
         model:personData
       });
-      
+
       assert.isUndefined(person.model.get('controlValue'), 'controlValue is undefined');
       $('.w-ctrl-testFunction').click();
       expect(person.model.get('controlValue')).to.equal(person.model.get('displayName'));
