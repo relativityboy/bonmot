@@ -63,6 +63,30 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
       $('.w-ctrl-testFunction').click();
       expect(person.model.get('controlValue')).to.equal(person.model.get('displayName'));
     });
+
+    it("injects a unique class", function () {
+      person = new (Person.View.extend({
+        unique:'foop'
+      }))({
+        el:document.getElementById('example'),
+        model:personData
+      });
+      expect($('.foop').length).to.equal(1);
+    });
+    it("throws error on duplicate unique class", function () {
+      var exception = 'exception not thrown', PersonExtended = Person.View.extend({
+        unique:'foop2'
+      });
+
+      try {
+        var Person2Extended = PersonExtended.extend({
+          unique: 'foop2'
+        });
+      } catch (e) {
+        exception = 'exception thrown';
+      }
+      expect(exception).to.equal('exception thrown');
+    });
   });
 
 });

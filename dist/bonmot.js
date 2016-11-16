@@ -579,6 +579,7 @@ define([
      * A unique check. Is this thing really unique within the BonMot Universe?
      */
     if(subView.unique) {
+      alert(subView.unique)
       if(uniques.hasOwnProperty(subView.unique)) {
         throw new Error('BonMot error when extending subView.unique ' + subView.unique + '. A subview with that name already exists:', uniques[subView.unique]);
       }
