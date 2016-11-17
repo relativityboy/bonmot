@@ -99,9 +99,25 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
         model:personData
       });
 
-      alert(person.$el.attr('data-v-cid'));
-      alert("test: " + $example.length + ' ' + ($example[0] === exampleNode) + ' ' + $example.data('v-cid') + ' ' + $example.attr('data-v-cid'));
       expect($example.data('v-cid')).to.equal(person.cid);
+    });
+
+    it("injects model cid into its own root node", function () {
+      person = new (Person.View.extend({}))({
+        el:exampleNode,
+        model:personData
+      });
+
+      expect($example.data('m-cid')).to.equal(person.model.cid);
+    });
+
+    it(".$elf - only finds elements within the view", function () {
+      person = new (Person.View.extend({}))({
+        el:exampleNode,
+        model:personData
+      });
+
+      assert($('.elf-test').length > person.$elf('.elf-test').length, $('.elf-test').length + ' is less than ' + person.$elf('.elf-test').length);
     });
   });
 

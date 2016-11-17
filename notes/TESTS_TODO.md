@@ -9,8 +9,8 @@ Rough notes to organize my thoughts. Test-stubs to follow.
 * injectunique class
     * injects class - done
     * throws error on duplicate unique class - done
-* inject view cid
-* inject model cid
+* inject view cid - done
+* inject model cid - done
 * .$elf finds only within view dom scope
 * .$ctrl contains control elements
 * .classSuffix
