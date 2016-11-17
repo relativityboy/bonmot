@@ -11,7 +11,7 @@ Rough notes to organize my thoughts. Test-stubs to follow.
     * throws error on duplicate unique class - done
 * inject view cid - done
 * inject model cid - done
-* .$elf finds only within view dom scope
+* .$elf finds only within view dom scope - done
 * .$ctrl contains control elements
 * .classSuffix
     * .$ctrl missing elements without suffix
