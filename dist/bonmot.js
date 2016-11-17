@@ -268,9 +268,10 @@ define([
       }
 
       this.findControlElements();
-      this.injectUnique();
 
       Backbone.View.apply(this, arguments);
+
+      this.injectUnique();
 
       if(options.model) {
         delete this.model; //because eliminating backbone side-effects
@@ -282,6 +283,7 @@ define([
     injectModelCid:function() {
       this.$el.attr('data-m-cid', this.model.cid);
     },
+
     injectUnique:function() {
       this.$el.attr('data-v-cid', this.cid);
       if(this.unique) {
@@ -299,6 +301,7 @@ define([
         this.$ctrl[key] = this.$elf(cssExpr);
       }, this);
     },
+    
     /**
      * Should be callable multiple times.
      */
@@ -579,7 +582,6 @@ define([
      * A unique check. Is this thing really unique within the BonMot Universe?
      */
     if(subView.unique) {
-      alert(subView.unique)
       if(uniques.hasOwnProperty(subView.unique)) {
         throw new Error('BonMot error when extending subView.unique ' + subView.unique + '. A subview with that name already exists:', uniques[subView.unique]);
       }

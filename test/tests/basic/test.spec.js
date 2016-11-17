@@ -2,7 +2,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
   function(hbsTestContainer, $, _, hbsPerson, Person) {
 
   describe("Basic Functionality", function () {
-    var $body, $example, person, personData;
+    var $body, $example, exampleNode, person, personData;
     before(function() {
       $body = $('body');
     });
@@ -11,6 +11,9 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
         person.remove();
       }
       $body.html(hbsTestContainer());
+
+      $example = $('#example');
+      exampleNode = $example[0];
 
       personData = {
         "firstName":"Molly",
@@ -21,13 +24,13 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
 
     it("puts its template in the dom", function () {
       person = new Person.View({
-        el:document.getElementById('example'),
+        el:exampleNode,
       });
       expect(hbsPerson()).to.equal(document.getElementById('example').innerHTML);
     });
     it("hydrates model from json", function () {
       person = new Person.View({
-        el:document.getElementById('example'),
+        el:exampleNode,
         model:personData
       });
       expect(person.model.constructor).to.equal(Person.Model);
@@ -36,7 +39,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
     });
     it("binds the model -> view", function () {
       person = new Person.View({
-        el:document.getElementById('example'),
+        el:exampleNode,
         model:personData
       });
 
@@ -45,7 +48,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
     });
     it("binds the view -> model", function () {
       person = new Person.View({
-        el:document.getElementById('example'),
+        el:exampleNode,
         model:personData
       });
       $('.w-atr-firstName').val("pear").trigger('change');
@@ -55,7 +58,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
     });
     it("binds controls to functions onclick", function () {
       person = new Person.View({
-        el:document.getElementById('example'),
+        el:exampleNode,
         model:personData
       });
 
@@ -68,13 +71,15 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
       person = new (Person.View.extend({
         unique:'foop'
       }))({
-        el:document.getElementById('example'),
+        el:exampleNode,
         model:personData
       });
       expect($('.foop').length).to.equal(1);
     });
+
     it("throws error on duplicate unique class", function () {
-      var exception = 'exception not thrown', PersonExtended = Person.View.extend({
+      var exception = 'exception not thrown',
+        PersonExtended = Person.View.extend({
         unique:'foop2'
       });
 
@@ -86,6 +91,17 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
         exception = 'exception thrown';
       }
       expect(exception).to.equal('exception thrown');
+    });
+
+    it("injects its cid into its own root node", function () {
+      person = new (Person.View.extend({}))({
+        el:exampleNode,
+        model:personData
+      });
+
+      alert(person.$el.attr('data-v-cid'));
+      alert("test: " + $example.length + ' ' + ($example[0] === exampleNode) + ' ' + $example.data('v-cid') + ' ' + $example.attr('data-v-cid'));
+      expect($example.data('v-cid')).to.equal(person.cid);
     });
   });
 

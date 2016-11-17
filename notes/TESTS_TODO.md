@@ -7,8 +7,8 @@ Rough notes to organize my thoughts. Test-stubs to follow.
 * event binding with .uiBindings   - done
 * control binding - done
 * injectunique class
-    * injects class
-    * throws error on duplicate unique class
+    * injects class - done
+    * throws error on duplicate unique class - done
 * inject view cid
 * inject model cid
 * .$elf finds only within view dom scope
