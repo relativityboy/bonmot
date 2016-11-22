@@ -14,10 +14,10 @@ define([
   DWBackbone
 ) {
   var _export = _.clone(DWBackbone),
+    CollectionView,
     View,
     vTemp, //here because pointers are a terrible thing to waste
     uniques = {};
-
 
   var AttributeRenderer = function(options) {
     this.$el = jQuery(options.el);
@@ -114,6 +114,10 @@ define([
       this.collection.on('remove', function(model) {
         this.removeChildView(model);
       }, this);
+      this.collection.on('reset', function(models, options) {
+        _.each(options.previousModels, this.removeChildView, this);
+        this.collection.each(this.newChildView, this);
+      }, this)
       this.collection.on('sort', function(){
         var $lastEl = false;
         this.collection.each(function(model, i) {
@@ -268,7 +272,9 @@ define([
       }
 
       this.findControlElements();
-
+      if(typeof this._extendConstructor === 'function') {
+        this._extendConstructor(options);
+      }
       Backbone.View.apply(this, arguments);
 
       this.injectUnique();
@@ -449,8 +455,10 @@ define([
     var classSuffix = (subView.classSuffix) ? '-' + subView.classSuffix : '',
       parentClassSuffix = (this.prototype.classSuffix) ? '-' + subView.classSuffix : '';
 
-    if(!subView.Model && !this.prototype.Model) {
-      throw new Error('This view must define a .Model attribute that is an extension of BonMot or DWBackbone');
+    if(this.prototype instanceof View) {
+      if(!subView.Model && !this.prototype.Model) {
+        throw new Error('This view must define a .Model attribute that is an extension of BonMot or DWBackbone');
+      }
     }
 
     //declared here to make use of classSuffix
@@ -609,5 +617,173 @@ define([
       this.trigger('destroy', this);
     },
   });
+
+
+  CollectionView = _export.CollectionView = _export.View.extend({
+    Model:DWBackbone.Collection,
+    constructor:function(options) {
+      var collection = false;
+      this.childViews = {};
+      if(!options.el) {
+        throw new Error('CollectionView must be passed an element on construction!');
+      }
+      if(!this.atrViews) {
+        this.atrViews = {};
+      }
+      if(options.childView) {
+        this.ChildView = options.childView;
+      }
+      if(!this.ChildView) {
+        throw new Error('CollectionView: must have a  this.ChildView or be passed .childView at construction.');
+      }
+
+      if(options.model) {
+        if(!options.model instanceof Backbone.Collection) {
+          throw new Error('CollectionView: .model must be instanceof Backbone.Collection');
+        }
+        this.collection = options.model;
+        delete options.model;
+      } else if (this.Model && this.Model.prototype instanceof Backbone.Collection) {
+        this.collection = new this.Model();
+      } else {
+        throw new Error("CollectionView: must have a this.Model, or have .model instance passed on construction. These must be instanceof Backbone.Collection");
+      }
+
+      var model = new DWBackbone.Model({
+        page:0,
+        pageLength:0,
+        sortOn:false
+      });
+
+      options.model = model;
+      this.listenTo(model, 'change:page change:pageLength', this.updateViewableCollection);
+      //we are not going to call View.constructor if we can at all avoid it.
+      //_export.View.apply(this, arguments);
+
+      Backbone.View.apply(this, arguments);
+
+      this.setModel(collection);
+    },
+    //BEGIN COPIED CODE
+    setModel:function(collection) {
+      if(this.collection === collection) {
+        return this;
+      }
+
+      if(this.collection && !collection) {
+        this.childViews.each(function(view, key) {
+          view.remove();
+          delete this.childViews[key];
+        }, this);
+        this.collection.off(null, null, this);
+        delete this.collection;
+        return this;
+      }
+
+      this.collection = collection;
+      this.renderChildViews();
+
+      this.collection.on('add', this.renderChildViews, this);
+      this.collection.on('remove', this.renderChildViews, this);
+      this.collection.on('reset', this.renderChildViews, this);
+      this.collection.on('sort', this.sortChildViews, this);
+    },
+    /**
+     * removes and adds child views as needed, then orders them.
+     * assumes sort, etc have already been called;
+     */
+    renderChildViews:function() {
+      var page = this.model.get('page'),
+        pageLength = this.model.get('pageLength'),
+        collection = (this.model.get('pageLength') === 0)? this.collection : new this.collection.constructor(this.collection.slice((page - 1) * pageLength, page * pageLength));
+
+      _.each(this.childViews, function(view, cid) {
+        if(!collection.get(cid)) {
+          this.removeChildView(view.model);
+        }
+      }, this);
+      collection.each(function(model) {
+        if(!this.childViews.hasOwnProperty(model.cid)) {
+          this.newChildView()
+        }
+      }, this);
+      this.sortChildViews(collection);
+
+    },
+    sortChildViews:function(collection) {
+      var $lastEl = false;
+      if(!collection) {
+        collection = (this.model.get('pageLength') === 0)? this.collection : new this.collection.constructor(this.collection.slice((page - 1) * pageLength, page * pageLength));
+      }
+
+      collection.each(function(model, i) {
+        if(i === 0) {
+          this.$el.prepend(this.childViews[model.cid].$el);
+        } else {
+          $lastEl.after(this.childViews[model.cid].$el);
+        }
+        $lastEl = this.childViews[model.cid].$el;
+      }, this);
+    },
+    newChildView:function(model) {
+      this.childViews[model.cid] = new this.ChildView({
+        model:model,
+        parentView:this.parentView
+      });
+      this.$el.append(this.childViews[model.cid].$el);
+    },
+    removeChildView:function(model) {
+      this.childViews[model.cid].off(null, null, this);
+      this.childViews[model.cid].remove();
+      delete this.childViews[model.cid];
+    },
+    remove:function() {
+      _.each(this.childViews, function(view) {
+        view.off(null,null,this);
+        view.remove();
+      }, this);
+      this.collection.off(null,null,this);
+      delete this.options;
+      delete this.parentView;
+      return Backbone.View.prototype.remove.call(this);
+    },
+    //END COPIED CODE
+    updateViewableCollection:function() {
+      var fullCollection = this.model.get('fullCollection'),
+        collection = this.model.get('collection'),
+        sortBy = this.model.get('sortBy')
+
+      collection.comparator = sortBy;
+      fullCollection.comparator = sortBy;
+      fullCollection.sort();
+      collection.reset(fullCollection.slice(this.model.get('page'), this.model.get('pageLength') - 1));
+    },
+    ctrlSortBy:function(evt) {
+      this.model.set('sortBy', $(evt.currentTarget).data('sort-by'));
+    },
+    ctrlFirst:function() {
+      this.model.set({'page': 0});
+    },
+    ctrlPrev:function() {
+      var page = this.model.get('page');
+      if(page > 0) {
+        this.model.set({'page': (page-1)});
+      } else {
+        this.ctrlFirst();
+      }
+    },
+    ctrlNext:function() {
+      var page = this.model.get('page');
+      if(page < Math.floor(this.model.get('fullCollection').length / this.model.get('pageLength'))) {
+        this.model.set({'page': (page+1)});
+      } else {
+        this.ctrlLast();
+      }
+    },
+    ctrlLast:function() {
+      this.model.set({'page': Math.floor(this.model.get('fullCollection').length / this.model.get('pageLength'))});
+    }
+  });
+
   return _.clone(_export);
 });
