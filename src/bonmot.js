@@ -61,7 +61,7 @@ define([
    *
    * It can be used on its own, but you'll need to refer to source to understand how to use it.
    * @type {any}
-   */
+   * /
   _export.CollectionViewManager = Backbone.View.extend({
     needsModel:false,
     constructor:function(options) {
@@ -152,7 +152,7 @@ define([
       delete this.parentView;
       return Backbone.View.prototype.remove.call(this);
     }
-  });
+  });*/
 
   //ROOT VIEW
   View = _export.View = Backbone.View.extend({
@@ -336,7 +336,7 @@ define([
 
       if(!init.primitiveRender && this.Model && this.Model.prototype._setCollections[atrName] ) {
         options.childView = init.view;
-        this.childViews[atrName] = new _export.CollectionViewManager(options);
+        this.childViews[atrName] = new _export.CollectionView(options);
       } else {
         this.childViews[atrName] = new init.view(options);
       }
@@ -621,8 +621,11 @@ define([
 
   CollectionView = _export.CollectionView = _export.View.extend({
     Model:DWBackbone.Collection,
+    firstPage:0,
     constructor:function(options) {
+      xx = this;
       var collection = false;
+      this.firstPage = (this.firstPage === 0)? 0 : 1;
       this.childViews = {};
       if(!options.el) {
         throw new Error('CollectionView must be passed an element on construction!');
@@ -641,10 +644,10 @@ define([
         if(!options.model instanceof Backbone.Collection) {
           throw new Error('CollectionView: .model must be instanceof Backbone.Collection');
         }
-        this.collection = options.model;
+        collection = options.model;
         delete options.model;
       } else if (this.Model && this.Model.prototype instanceof Backbone.Collection) {
-        this.collection = new this.Model();
+        collection = new this.Model();
       } else {
         throw new Error("CollectionView: must have a this.Model, or have .model instance passed on construction. These must be instanceof Backbone.Collection");
       }
@@ -656,12 +659,10 @@ define([
       });
 
       options.model = model;
-      this.listenTo(model, 'change:page change:pageLength', this.updateViewableCollection);
+      this.listenTo(model, 'change:page change:pageLength', this.renderChildViews);
       //we are not going to call View.constructor if we can at all avoid it.
       //_export.View.apply(this, arguments);
-
       Backbone.View.apply(this, arguments);
-
       this.setModel(collection);
     },
     //BEGIN COPIED CODE
@@ -671,7 +672,7 @@ define([
       }
 
       if(this.collection && !collection) {
-        this.childViews.each(function(view, key) {
+        _.each(this.childViews,function(view, key) {
           view.remove();
           delete this.childViews[key];
         }, this);
@@ -686,34 +687,40 @@ define([
       this.collection.on('add', this.renderChildViews, this);
       this.collection.on('remove', this.renderChildViews, this);
       this.collection.on('reset', this.renderChildViews, this);
-      this.collection.on('sort', this.sortChildViews, this);
+      this.collection.on('sort', this.renderChildViews, this);
     },
     /**
      * removes and adds child views as needed, then orders them.
      * assumes sort, etc have already been called;
      */
     renderChildViews:function() {
-      var page = this.model.get('page'),
+      var page = this.model.get('page') - this.firstPage,
         pageLength = this.model.get('pageLength'),
-        collection = (this.model.get('pageLength') === 0)? this.collection : new this.collection.constructor(this.collection.slice((page - 1) * pageLength, page * pageLength));
-
+        collection = (this.model.get('pageLength') === 0)? this.collection : new this.collection.constructor(this.collection.slice(page * pageLength, (page + 1) * pageLength));
       _.each(this.childViews, function(view, cid) {
         if(!collection.get(cid)) {
-          this.removeChildView(view.model);
+          this.removeChildView(cid);
         }
       }, this);
       collection.each(function(model) {
         if(!this.childViews.hasOwnProperty(model.cid)) {
-          this.newChildView()
+
+          this.newChildView(model)
         }
       }, this);
       this.sortChildViews(collection);
 
     },
     sortChildViews:function(collection) {
-      var $lastEl = false;
+      var $lastEl = false, page, pageLength;
       if(!collection) {
-        collection = (this.model.get('pageLength') === 0)? this.collection : new this.collection.constructor(this.collection.slice((page - 1) * pageLength, page * pageLength));
+        pageLength = this.model.get('pageLength');
+        if(pageLength === 0) {
+          collection = this.collection;
+        } else {
+          page = this.model.get('page');
+          collection =  new this.collection.constructor(this.collection.slice((page - 1) * pageLength, page * pageLength));
+        }
       }
 
       collection.each(function(model, i) {
@@ -732,10 +739,10 @@ define([
       });
       this.$el.append(this.childViews[model.cid].$el);
     },
-    removeChildView:function(model) {
-      this.childViews[model.cid].off(null, null, this);
-      this.childViews[model.cid].remove();
-      delete this.childViews[model.cid];
+    removeChildView:function(cid) {
+      this.childViews[cid].off(null, null, this);
+      this.childViews[cid].remove();
+      delete this.childViews[cid];
     },
     remove:function() {
       _.each(this.childViews, function(view) {
@@ -748,7 +755,7 @@ define([
       return Backbone.View.prototype.remove.call(this);
     },
     //END COPIED CODE
-    updateViewableCollection:function() {
+    /*updateViewableCollection:function() {
       var fullCollection = this.model.get('fullCollection'),
         collection = this.model.get('collection'),
         sortBy = this.model.get('sortBy')
@@ -757,7 +764,7 @@ define([
       fullCollection.comparator = sortBy;
       fullCollection.sort();
       collection.reset(fullCollection.slice(this.model.get('page'), this.model.get('pageLength') - 1));
-    },
+    },*/
     ctrlSortBy:function(evt) {
       this.model.set('sortBy', $(evt.currentTarget).data('sort-by'));
     },
