@@ -529,8 +529,8 @@ define([
    */
   CollectionView = _export.CollectionView = _export.View.extend({
     Model:DWBackbone.Collection,
-    firstPage:0,
-    bindings:{'.w-atr-page':'page'},
+    firstPage:1,
+    bindings:{'.w-atr-page':'page', '.w-atr-pageLength':'pageLength'},
     constructor:function(options) {
       xx = this;
       var collection = false;
@@ -550,7 +550,7 @@ define([
       }
 
       if(options.model) {
-        if(!options.model instanceof Backbone.Collection) {
+        if(!(options.model instanceof Backbone.Collection)) {
           throw new Error('CollectionView: .model must be instanceof Backbone.Collection');
         }
         collection = options.model;
@@ -562,7 +562,7 @@ define([
       }
 
       var model = new DWBackbone.Model({
-        page:0,
+        page:1,
         pageLength:0,
         sortOn:false
       });
@@ -609,8 +609,8 @@ define([
      */
     renderChildViews:function() {
       var page = this.model.get('page') - this.firstPage,
-        pageLength = this.model.get('pageLength'),
-        collection = (this.model.get('pageLength') === 0)? this.collection : new this.collection.constructor(this.collection.slice(page * pageLength, (page + 1) * pageLength));
+        pageLength = parseInt(this.model.get('pageLength')),
+        collection = (pageLength === 0)? this.collection : new this.collection.constructor(this.collection.slice(page * pageLength, (page + 1) * pageLength));
       _.each(this.childViews, function(view, cid) {
         if(!collection.get(cid)) {
           this.removeChildView(cid);
@@ -618,8 +618,7 @@ define([
       }, this);
       collection.each(function(model) {
         if(!this.childViews.hasOwnProperty(model.cid)) {
-
-          this.newChildView(model)
+          this.newChildView(model);
         }
       }, this);
       this.sortChildViews(collection);
@@ -672,11 +671,11 @@ define([
       this.model.set('sortBy', $(evt.currentTarget).data('sort-by'));
     },
     ctrlFirst:function() {
-      this.model.set({'page': 0});
+      this.model.set({'page': this.firstPage});
     },
     ctrlPrev:function() {
       var page = this.model.get('page');
-      if(page > 0) {
+      if(page > this.firstPage) {
         this.model.set({'page': (page-1)});
       } else {
         this.ctrlFirst();
@@ -684,14 +683,16 @@ define([
     },
     ctrlNext:function() {
       var page = this.model.get('page');
-      if(page < (Math.floor(this.collection.length / this.model.get('pageLength')) - 1)) {
+      var minus = (this.firstPage === 1)? 0 : 1;
+      if(page < (Math.floor(this.collection.length / this.model.get('pageLength')) - minus)) {
         this.model.set({'page': (page+1)});
       } else {
         this.ctrlLast();
       }
     },
     ctrlLast:function() {
-      this.model.set({'page': (Math.floor(this.collection.length / this.model.get('pageLength')) - 1)});
+      var minus = (this.firstPage === 1)? 0 : 1;
+      this.model.set({'page': (Math.floor(this.collection.length / this.model.get('pageLength')) - minus)});
     }
   });
 
