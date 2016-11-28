@@ -172,9 +172,7 @@ define([
       }
 
       this.findControlElements();
-      if(typeof this._extendConstructor === 'function') {
-        this._extendConstructor(options);
-      }
+
       Backbone.View.apply(this, arguments);
 
       this.injectUnique();
@@ -525,6 +523,20 @@ define([
    * to manage a collection of models that is an attribute of a parent-view's Model.
    *
    * It can be used on its own, but you'll need to refer to source to understand how to use it.
+   *
+   * Some information on its operation and declaration. Because we expect it to work within a parent
+   * view that doesn't make distinctions between Model and Collection (nor should it need to)
+   * "setModel" could be considered to mean "set the item of interest".. which (we hope) is a collection
+   * BUT CollectionView also uses a Model to bind controls and store values, and needs to keep that
+   * Model instance at .model so that event and attribute bindings are created and handled correctly.
+   * This model is instantiated in the constructor, and NEVER changes.
+   *
+   * So .setModel() takes a collection.
+   *
+   * There's a lot of code in this contstructor's class that's been duplicated from the primary View
+   * constructor... that's because we can't call it directly, as it calls 'setModel' at the end
+   * this would be disasterous for CollectionView. So we copy.
+   *
    * @type {any}
    */
   CollectionView = _export.CollectionView = _export.View.extend({
@@ -532,8 +544,12 @@ define([
     firstPage:1,
     bindings:{'.w-atr-page':'page', '.w-atr-pageLength':'pageLength'},
     constructor:function(options) {
-      xx = this;
-      var collection = false;
+      var $el,
+        collection = false,
+        hbs = (options.hbs)? options.hbs : this.hbs,
+        hbsData = {},
+        model;
+
       this.firstPage = (this.firstPage === 0)? 0 : 1;
       this.childViews = {};
       if(!options.el) {
@@ -561,23 +577,47 @@ define([
         throw new Error("CollectionView: must have a this.Model, or have .model instance passed on construction. These must be instanceof Backbone.Collection");
       }
 
-      var model = new DWBackbone.Model({
-        page:1,
-        pageLength:0,
-        sortOn:false
-      });
+      if (typeof hbs === 'string') {
+        hbs = Handlebars.compile(hbs);
+      }
+      if(this.hbsData) {
+        hbsData = this.hbsData;
+      }
 
-      options.model = model;
-      this.listenTo(model, 'change:page change:pageLength', this.renderChildViews);
-      //we are not going to call View.constructor if we can at all avoid it.
-      //_export.View.apply(this, arguments);
-      Backbone.View.apply(this, arguments);
-      this.stickit();
+      $el = jQuery(hbs(hbsData));
+
+      if(options.el) {
+        this.el = options.el;
+        this.$el = jQuery(options.el);
+        if($el.html()) {
+          this.$el.html($el);
+        }
+      } else {
+        this.el = options.el = $el[0];
+        this.$el = $el;
+      }
+
+      this.findControlElements();
 
       this.$collection = this.$elf('.w-collection:first');
       if(this.$collection.length === 0) {
         this.$collection = this.$el;
       }
+
+      model = new DWBackbone.Model({
+        page:1,
+        pageLength: (this.$collection.data('page-length'))? parseInt(this.$collection.data('page-length')) : 0,
+        sortOn:false
+      });
+      options.model = model;
+      this.listenTo(model, 'change:page change:pageLength', this.renderChildViews);
+
+      Backbone.View.apply(this, arguments);
+
+      this.injectUnique();
+
+      this.stickit();
+
       this.setModel(collection);
     },
     setModel:function(collection) {
