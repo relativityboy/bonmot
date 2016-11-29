@@ -361,14 +361,16 @@ define([
 
     //declared here to make use of classSuffix
     var ctrlEvents = function(fn, fnName) {
+
       var ctrlNameFragment,
         event,
         eventExpression,
         fnNameFragments;
       if((typeof fn === 'function') && (fnName.indexOf('ctrl') === 0)) {
         event = 'click';
-        fnNameFragments = DWBackbone.toUnderscored(fnName.substring(4)).split('_');
-        switch(fnNameFragments[0]) { //todo: support these different event types
+        fnNameFragments = DWBackbone.toUnderscored(fnName.substring(4)).substring(1).split('_');
+        switch(fnNameFragments[0].toLowerCase()) { //todo: support these different event types
+          case 'change' :
           case 'mouseout' :
           case 'mouseover' :
           case 'keypressed' :
@@ -377,9 +379,8 @@ define([
           case 'click' :
             event = fnNameFragments.shift();
         }
-        ctrlNameFragment = DWBackbone.toCamel(fnNameFragments.join('_'));
 
-        ctrlNameFragment = ctrlNameFragment.replace(ctrlNameFragment.charAt(0), ctrlNameFragment.charAt(0).toLowerCase());
+        ctrlNameFragment = DWBackbone.toCamel(fnNameFragments.join('_'));
         this.ctrlElementClasses[ctrlNameFragment] = '.w-ctrl-' + ctrlNameFragment + classSuffix;
         eventExpression = event + ' ' + this.ctrlElementClasses[ctrlNameFragment];
 
@@ -607,10 +608,12 @@ define([
       model = new DWBackbone.Model({
         page:1,
         pageLength: (this.$collection.data('page-length'))? parseInt(this.$collection.data('page-length')) : 0,
-        sortOn:false
+        sortOn:false,
+        searchOn:'',
+        search:''
       });
       options.model = model;
-      this.listenTo(model, 'change:page change:pageLength', this.renderChildViews);
+      this.listenTo(model, 'change:page change:pageLength change:search change:searchBy', this.renderChildViews);
 
       Backbone.View.apply(this, arguments);
 
@@ -623,6 +626,9 @@ define([
     setModel:function(collection) {
       if(this.collection === collection) {
         return this;
+      }
+      if(collection && !(collection instanceof Backbone.Collection)) {
+        throw new Error('Bonmot.CollectionView.setModel(collection) was not passed a collection!');
       }
 
       if(this.collection && !collection) {
@@ -650,7 +656,23 @@ define([
     renderChildViews:function() {
       var page = this.model.get('page') - this.firstPage,
         pageLength = parseInt(this.model.get('pageLength')),
-        collection = (pageLength === 0)? this.collection : new this.collection.constructor(this.collection.slice(page * pageLength, (page + 1) * pageLength));
+        collection = this.collection,
+        search = this.model.get('search'),
+        searchBy = this.model.get('searchBy');
+
+        if(search.length > 0 ) {
+          collection = new this.collection.constructor(this.collection.filter(function(model) {
+            return (model.get(searchBy).indexOf(search) > -1);
+          }, this));
+        }
+        if((pageLength > 0) && (collection.length > 0)) {
+          if((page * pageLength) > collection.length) {
+            this.model.set('page', ((page - 1) + this.firstPage));
+            return;
+          }
+          collection = new this.collection.constructor(collection.slice(page * pageLength, (page + 1) * pageLength))
+        }
+
       _.each(this.childViews, function(view, cid) {
         if(!collection.get(cid)) {
           this.removeChildView(cid);
@@ -707,6 +729,11 @@ define([
       delete this.parentView;
       return Backbone.View.prototype.remove.call(this);
     },
+    ctrlKeyupSearch:function(evt) {
+      var $search = $(evt.currentTarget);
+      this.model.set('searchBy', $search.data('search-by'));
+      this.model.set('search', $search.val());
+    },
     ctrlSortBy:function(evt) {
       this.model.set('sortBy', $(evt.currentTarget).data('sort-by'));
     },
@@ -724,7 +751,7 @@ define([
     ctrlNext:function() {
       var page = this.model.get('page');
       var minus = (this.firstPage === 1)? 0 : 1;
-      if(page < (Math.floor(this.collection.length / this.model.get('pageLength')) - minus)) {
+      if(page < (Math.ceil(this.collection.length / this.model.get('pageLength')) - minus)) {
         this.model.set({'page': (page+1)});
       } else {
         this.ctrlLast();

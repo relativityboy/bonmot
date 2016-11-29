@@ -77,9 +77,5 @@ While we're doing that, we'll figure out a way to have them directly addable in 
 itemView to be declared off them (this will take the place of the atrView item)
 
 ##Lists of things 3 - execution
-1. in-browser, page length, page, next last previous first - done
-1. need search
-1. want pageLength configurable in html, and in class definition
-1. want 'sort in view'
 1. want 'simple html' view/output
 1. want server-calls?
