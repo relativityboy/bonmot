@@ -1,9 +1,11 @@
 define([
   'hbs!./person',
+  'hbs!./person_suffix',
   'bonmot'
   ],
   function(
     tplPerson,
+    tplPersonSuffix,
     BonMot
   ) {
     var _export = {};
@@ -39,7 +41,16 @@ define([
       uiBindings:['firstName','lastName', 'displayName'],
       ctrlTestFunction:function () {
         this.model.set('controlValue', this.model.get("displayName"));
+      },
+      ctrlKeyUpFn:function() {
+        //no-op
       }
+
+    });
+
+    _export.ViewSuffix = _export.View.extend({
+      hbs:tplPersonSuffix,
+      classSuffix:'compassion'
     });
 
     return _export;

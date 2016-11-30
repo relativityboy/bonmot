@@ -1,7 +1,7 @@
-define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person', './person/person'],
+define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./fundamentals/person', './fundamentals/person'],
   function(hbsTestContainer, $, _, hbsPerson, Person) {
 
-  describe("Basic Functionality", function () {
+  describe("Basic Functionality - fundamentals", function () {
     var $body, $example, exampleNode, person, personData;
     before(function() {
       $body = $('body');
@@ -118,6 +118,53 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./person/person'
       });
 
       assert($('.elf-test').length > person.$elf('.elf-test').length, $('.elf-test').length + ' is less than ' + person.$elf('.elf-test').length);
+    });
+
+    it(".$ctrl contains only valid control elements", function () {
+      person = new Person.View({
+        el:exampleNode,
+        model:personData
+      });
+      var $ctrlElementSearches = {
+        'testFunction':$(person.el).find('.w-ctrl-testFunction'),
+        'keyUpFn':$(person.el).find('.w-ctrl-keyUpFn')
+      };
+
+      var $ctrlClassedElements = {
+        'notAFunction':$(person.el).find('.w-ctrl-notAFunction')
+      };
+
+      _.each($ctrlElementSearches, function($ctrl, key) {
+        assert(person.$ctrl.hasOwnProperty(key), 'person.$ctrl has property ' + key);
+        assert($ctrl.length == person.$ctrl[key].length, 'person.$ctrl.' + key + ' has the same length as the number of elements within the view\'s dom.');
+      });
+
+      _.each($ctrlClassedElements, function($ctrl, key) {
+        assert(!person.$ctrl.hasOwnProperty(key), 'person.$ctrl does not have property ' + key);
+      });
+    });
+
+    it(".classSuffix", function () {
+      var person = new Person.ViewSuffix({
+        el:exampleNode,
+        model:personData
+      }),
+        ctrlKeys = {
+          testFunction:0,
+          keyUpFn:1
+        },
+        atrKeys = _.clone(personData);
+
+      _.each(ctrlKeys, function(count, key) {
+        assert(person.$ctrl.hasOwnProperty(key), 'person.$ctrl has property ' + key);
+        assert(person.$ctrl[key].length === count, key + ' has ' + count + ' elements');
+      });
+
+      _.each(atrKeys, function(count, key) {
+        assert(person.$elf('.w-atr-' + key + '-' + person.classSuffix).val() == person.model.get(key), 'person.model has bound property ' + key);
+      });
+
+      assert(person.$elf('.w-atr-displayName').val() != person.model.get('displayName'), 'person.model does not have bound property \'displayName\'');
     });
   });
 

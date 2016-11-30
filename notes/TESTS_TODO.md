@@ -2,6 +2,8 @@
 Rough notes to organize my thoughts. Test-stubs to follow.
 
 ###Basic View Tests
+
+####Fundamentals
 * basic .hbs population - done
 * model hydration via .Model - done
 * event binding with .uiBindings   - done
@@ -12,16 +14,17 @@ Rough notes to organize my thoughts. Test-stubs to follow.
 * inject view cid - done
 * inject model cid - done
 * .$elf finds only within view dom scope - done
-* .$ctrl contains control elements
-* .classSuffix
+* .$ctrl contains control elements - done
+* .classSuffix - done (all)
     * .$ctrl missing elements without suffix
     * .w-ctrl & .ctrl
         * not bound if missing suffix
         * bound if suffix
     * .w-atr elements
         * not bound if missing suffix
-        * bound if suffix
-        
+        * bound if suffix 
+  
+####Views & Models               
 * support no model on creation
     * needModel == false
     * needModel == true
@@ -76,3 +79,18 @@ Rough notes to organize my thoughts. Test-stubs to follow.
 * destruction of child views 
     * based on model deletion
     * based on removal of element from collection
+* subsets
+    * pagination
+        * pagelength
+            * correct length
+            * correct items, correct order
+        * first
+            * correct items, correct order
+        * last
+        * goto
+        * next
+        * prev
+    * search
+        * pagination in search
+            * goto
+            * correct items, correct order
