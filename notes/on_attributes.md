@@ -75,3 +75,7 @@ cause it to branch down the more complex rendering path.
 
 While we're doing that, we'll figure out a way to have them directly addable in atrViews, and allow an 
 itemView to be declared off them (this will take the place of the atrView item)
+
+##Lists of things 3 - execution
+1. want 'simple html' view/output
+1. want server-calls?

@@ -14,10 +14,10 @@ define([
   DWBackbone
 ) {
   var _export = _.clone(DWBackbone),
+    CollectionView,
     View,
     vTemp, //here because pointers are a terrible thing to waste
     uniques = {};
-
 
   var AttributeRenderer = function(options) {
     this.$el = jQuery(options.el);
@@ -53,102 +53,6 @@ define([
   AttributeRenderer.prototype.on = function() {
     //no-op
   };
-
-  /**
-   * Manages a set of child-views created from a collection of models.
-   * More specifically it is intended to be auto-invoked by a parent-View
-   * to manage a collection of models that is an attribute of a parent-view's Model.
-   *
-   * It can be used on its own, but you'll need to refer to source to understand how to use it.
-   * @type {any}
-   */
-  _export.CollectionViewManager = Backbone.View.extend({
-    needsModel:false,
-    constructor:function(options) {
-      var collection = false;
-
-      if(!options.el) {
-        throw new Error('CollectionViewManager must be passed an element on construction!');
-      }
-      if(!options.childView ) {
-        throw new Error('A childView must be specified for CollectionViewManager');
-      }
-      if(options.parentView) {
-        this.parentView = options.parentView;
-      }
-
-      this.$el = $(options.el);
-      this.$el.html('');
-      this.ChildView = options.childView;
-      this.childViews = {};
-      if(options.model) {
-        collection = options.model;
-        delete options.model;
-      }
-      if(options.collection) {
-        collection = options.collection;
-      }
-      Backbone.View.apply(this, arguments);
-
-      this.setModel(collection);
-    },
-    setModel:function(collection) {
-      if(this.collection === collection) {
-        return this;
-      }
-      if(this.collection) {
-        this.childViews.each(function(view, key) {
-          view.remove();
-          delete this.childViews[key];
-        }, this);
-        this.collection.off(null, null, this);
-      }
-      if(!collection) {
-        return this;
-      }
-      this.collection = collection;
-      this.collection.each(this.newChildView, this);
-      this.collection.on('add', function(model) {
-        this.newChildView(model);
-      }, this);
-      this.collection.on('remove', function(model) {
-        this.removeChildView(model);
-      }, this);
-      this.collection.on('sort', function(){
-        var $lastEl = false;
-        this.collection.each(function(model, i) {
-          if(i === 0) {
-            this.$el.prepend(this.childViews[model.cid].$el);
-          } else {
-            $lastEl.after(this.childViews[model.cid].$el);
-          }
-          $lastEl = this.childViews[model.cid].$el;
-        }, this);
-
-      }, this);
-    },
-    newChildView:function(model) {
-      this.childViews[model.cid] = new this.ChildView({
-        model:model,
-        parentView:this.parentView
-      });
-      this.$el.append(this.childViews[model.cid].$el);
-    },
-    removeChildView:function(model) {
-      this.childViews[model.cid].off(null, null, this);
-      this.childViews[model.cid].remove();
-    },
-    remove:function() {
-      _.each(this.childViews, function(view) {
-        view.off(null,null,this);
-        view.remove();
-      }, this);
-      this.collection.off(null,null,this);
-      delete this.options;
-      delete this.parentView;
-      return Backbone.View.prototype.remove.call(this);
-    }
-  });
 
   //ROOT VIEW
   View = _export.View = Backbone.View.extend({
@@ -330,7 +234,7 @@ define([
 
       if(!init.primitiveRender && this.Model && this.Model.prototype._setCollections[atrName] ) {
         options.childView = init.view;
-        this.childViews[atrName] = new _export.CollectionViewManager(options);
+        this.childViews[atrName] = new _export.CollectionView(options);
       } else {
         this.childViews[atrName] = new init.view(options);
       }
@@ -449,20 +353,24 @@ define([
     var classSuffix = (subView.classSuffix) ? '-' + subView.classSuffix : '',
       parentClassSuffix = (this.prototype.classSuffix) ? '-' + subView.classSuffix : '';
 
-    if(!subView.Model && !this.prototype.Model) {
-      throw new Error('This view must define a .Model attribute that is an extension of BonMot or DWBackbone');
+    if(this.prototype instanceof View) {
+      if(!subView.Model && !this.prototype.Model) {
+        throw new Error('This view must define a .Model attribute that is an extension of BonMot or DWBackbone');
+      }
     }
 
     //declared here to make use of classSuffix
     var ctrlEvents = function(fn, fnName) {
+
       var ctrlNameFragment,
         event,
         eventExpression,
         fnNameFragments;
       if((typeof fn === 'function') && (fnName.indexOf('ctrl') === 0)) {
         event = 'click';
-        fnNameFragments = DWBackbone.toUnderscored(fnName.substring(4)).split('_');
-        switch(fnNameFragments[0]) { //todo: support these different event types
+        fnNameFragments = DWBackbone.toUnderscored(fnName.substring(4)).substring(1).split('_');
+        switch(fnNameFragments[0].toLowerCase()) { //todo: support these different event types
+          case 'change' :
           case 'mouseout' :
           case 'mouseover' :
           case 'keypressed' :
@@ -471,9 +379,8 @@ define([
           case 'click' :
             event = fnNameFragments.shift();
         }
-        ctrlNameFragment = DWBackbone.toCamel(fnNameFragments.join('_'));
 
-        ctrlNameFragment = ctrlNameFragment.replace(ctrlNameFragment.charAt(0), ctrlNameFragment.charAt(0).toLowerCase());
+        ctrlNameFragment = DWBackbone.toCamel(fnNameFragments.join('_'));
         this.ctrlElementClasses[ctrlNameFragment] = '.w-ctrl-' + ctrlNameFragment + classSuffix;
         eventExpression = event + ' ' + this.ctrlElementClasses[ctrlNameFragment];
 
@@ -609,5 +516,252 @@ define([
       this.trigger('destroy', this);
     },
   });
+
+
+  /**
+   * Manages a set of child-views created from a collection of models.
+   * More specifically it is intended to be auto-invoked by a parent-View
+   * to manage a collection of models that is an attribute of a parent-view's Model.
+   *
+   * It can be used on its own, but you'll need to refer to source to understand how to use it.
+   *
+   * Some information on its operation and declaration. Because we expect it to work within a parent
+   * view that doesn't make distinctions between Model and Collection (nor should it need to)
+   * "setModel" could be considered to mean "set the item of interest".. which (we hope) is a collection
+   * BUT CollectionView also uses a Model to bind controls and store values, and needs to keep that
+   * Model instance at .model so that event and attribute bindings are created and handled correctly.
+   * This model is instantiated in the constructor, and NEVER changes.
+   *
+   * So .setModel() takes a collection.
+   *
+   * There's a lot of code in this contstructor's class that's been duplicated from the primary View
+   * constructor... that's because we can't call it directly, as it calls 'setModel' at the end
+   * this would be disasterous for CollectionView. So we copy.
+   *
+   * @type {any}
+   */
+  CollectionView = _export.CollectionView = _export.View.extend({
+    Model:DWBackbone.Collection,
+    firstPage:1,
+    bindings:{'.w-atr-page':'page', '.w-atr-pageLength':'pageLength'},
+    constructor:function(options) {
+      var $el,
+        collection = false,
+        hbs = (options.hbs)? options.hbs : this.hbs,
+        hbsData = {},
+        model;
+
+      this.firstPage = (this.firstPage === 0)? 0 : 1;
+      this.childViews = {};
+      if(!options.el) {
+        throw new Error('CollectionView must be passed an element on construction!');
+      }
+      if(!this.atrViews) {
+        this.atrViews = {};
+      }
+      if(options.childView) {
+        this.ChildView = options.childView;
+      }
+      if(!this.ChildView) {
+        throw new Error('CollectionView: must have a  this.ChildView or be passed .childView at construction.');
+      }
+
+      if(options.model) {
+        if(!(options.model instanceof Backbone.Collection)) {
+          throw new Error('CollectionView: .model must be instanceof Backbone.Collection');
+        }
+        collection = options.model;
+        delete options.model;
+      } else if (this.Model && this.Model.prototype instanceof Backbone.Collection) {
+        collection = new this.Model();
+      } else {
+        throw new Error("CollectionView: must have a this.Model, or have .model instance passed on construction. These must be instanceof Backbone.Collection");
+      }
+
+      if (typeof hbs === 'string') {
+        hbs = Handlebars.compile(hbs);
+      }
+      if(this.hbsData) {
+        hbsData = this.hbsData;
+      }
+
+      $el = jQuery(hbs(hbsData));
+
+      if(options.el) {
+        this.el = options.el;
+        this.$el = jQuery(options.el);
+        if($el.html()) {
+          this.$el.html($el);
+        }
+      } else {
+        this.el = options.el = $el[0];
+        this.$el = $el;
+      }
+
+      this.findControlElements();
+
+      this.$collection = this.$elf('.w-collection:first');
+      if(this.$collection.length === 0) {
+        this.$collection = this.$el;
+      }
+
+      model = new DWBackbone.Model({
+        page:1,
+        pageLength: (this.$collection.data('page-length'))? parseInt(this.$collection.data('page-length')) : 0,
+        sortOn:false,
+        searchOn:'',
+        search:''
+      });
+      options.model = model;
+      this.listenTo(model, 'change:page change:pageLength change:search change:searchBy', this.renderChildViews);
+
+      Backbone.View.apply(this, arguments);
+
+      this.injectUnique();
+
+      this.stickit();
+
+      this.setModel(collection);
+    },
+    setModel:function(collection) {
+      if(this.collection === collection) {
+        return this;
+      }
+      if(collection && !(collection instanceof Backbone.Collection)) {
+        throw new Error('Bonmot.CollectionView.setModel(collection) was not passed a collection!');
+      }
+
+      if(this.collection && !collection) {
+        _.each(this.childViews,function(view, key) {
+          view.remove();
+          delete this.childViews[key];
+        }, this);
+        this.collection.off(null, null, this);
+        delete this.collection;
+        return this;
+      }
+
+      this.collection = collection;
+      this.renderChildViews();
+
+      this.collection.on('add', this.renderChildViews, this);
+      this.collection.on('remove', this.renderChildViews, this);
+      this.collection.on('reset', this.renderChildViews, this);
+      this.collection.on('sort', this.renderChildViews, this);
+    },
+    /**
+     * removes and adds child views as needed, then orders them.
+     * assumes sort, etc have already been called;
+     */
+    renderChildViews:function() {
+      var page = this.model.get('page') - this.firstPage,
+        pageLength = parseInt(this.model.get('pageLength')),
+        collection = this.collection,
+        search = this.model.get('search'),
+        searchBy = this.model.get('searchBy');
+
+        if(search.length > 0 ) {
+          collection = new this.collection.constructor(this.collection.filter(function(model) {
+            return (model.get(searchBy).indexOf(search) > -1);
+          }, this));
+        }
+        if((pageLength > 0) && (collection.length > 0)) {
+          if((page * pageLength) > collection.length) {
+            this.model.set('page', ((page - 1) + this.firstPage));
+            return;
+          }
+          collection = new this.collection.constructor(collection.slice(page * pageLength, (page + 1) * pageLength))
+        }
+
+      _.each(this.childViews, function(view, cid) {
+        if(!collection.get(cid)) {
+          this.removeChildView(cid);
+        }
+      }, this);
+      collection.each(function(model) {
+        if(!this.childViews.hasOwnProperty(model.cid)) {
+          this.newChildView(model);
+        }
+      }, this);
+      this.sortChildViews(collection);
+
+    },
+    sortChildViews:function(collection) {
+      var $lastEl = false, page, pageLength;
+      if(!collection) {
+        pageLength = this.model.get('pageLength');
+        if(pageLength === 0) {
+          collection = this.collection;
+        } else {
+          page = this.model.get('page');
+          collection =  new this.collection.constructor(this.collection.slice((page - 1) * pageLength, page * pageLength));
+        }
+      }
+
+      collection.each(function(model, i) {
+        if(i === 0) {
+          this.$collection.prepend(this.childViews[model.cid].$el);
+        } else {
+          $lastEl.after(this.childViews[model.cid].$el);
+        }
+        $lastEl = this.childViews[model.cid].$el;
+      }, this);
+    },
+    newChildView:function(model) {
+      this.childViews[model.cid] = new this.ChildView({
+        model:model,
+        parentView:this.parentView
+      });
+      this.$collection.append(this.childViews[model.cid].$el);
+    },
+    removeChildView:function(cid) {
+      this.childViews[cid].off(null, null, this);
+      this.childViews[cid].remove();
+      delete this.childViews[cid];
+    },
+    remove:function() {
+      _.each(this.childViews, function(view) {
+        view.off(null,null,this);
+        view.remove();
+      }, this);
+      this.collection.off(null,null,this);
+      delete this.options;
+      delete this.parentView;
+      return Backbone.View.prototype.remove.call(this);
+    },
+    ctrlKeyupSearch:function(evt) {
+      var $search = $(evt.currentTarget);
+      this.model.set('searchBy', $search.data('search-by'));
+      this.model.set('search', $search.val());
+    },
+    ctrlSortBy:function(evt) {
+      this.model.set('sortBy', $(evt.currentTarget).data('sort-by'));
+    },
+    ctrlFirst:function() {
+      this.model.set({'page': this.firstPage});
+    },
+    ctrlPrev:function() {
+      var page = this.model.get('page');
+      if(page > this.firstPage) {
+        this.model.set({'page': (page-1)});
+      } else {
+        this.ctrlFirst();
+      }
+    },
+    ctrlNext:function() {
+      var page = this.model.get('page');
+      var minus = (this.firstPage === 1)? 0 : 1;
+      if(page < (Math.ceil(this.collection.length / this.model.get('pageLength')) - minus)) {
+        this.model.set({'page': (page+1)});
+      } else {
+        this.ctrlLast();
+      }
+    },
+    ctrlLast:function() {
+      var minus = (this.firstPage === 1)? 0 : 1;
+      this.model.set({'page': (Math.floor(this.collection.length / this.model.get('pageLength')) - minus)});
+    }
+  });
+
   return _.clone(_export);
 });
