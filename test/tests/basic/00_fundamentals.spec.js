@@ -144,12 +144,12 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./fundamentals/p
       });
     });
 
-    it(".classSuffix", function () {
+    it(".classSuffix existence causes binding elements with w-< ctrl|atr|... >-< x >-< classSuffix > only", function () {
       var person = new Person.ViewSuffix({
         el:exampleNode,
         model:personData
       }),
-        ctrlKeys = {
+        ctrlKeys = { //these represent the control elements that have been searched for, and the number of elements that have been found.
           testFunction:0,
           keyUpFn:1
         },

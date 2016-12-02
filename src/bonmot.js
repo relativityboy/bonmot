@@ -137,6 +137,9 @@ define([
       if(options.model && !(options.model instanceof this.Model)) {
         options.model = new this.Model(options.model);
       }
+      if(this.needsModel && (typeof options !== 'object' || !options.hasOwnProperty('model'))) {
+        throw new Error('This View requires a model on instantiation. (.needsModel == true in View declaration  )');
+      }
 
       if(options.hasOwnProperty('parentView')) {
         this.parentView = options.parentView;

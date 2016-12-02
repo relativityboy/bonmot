@@ -25,7 +25,7 @@ Rough notes to organize my thoughts. Test-stubs to follow.
         * bound if suffix 
   
 ####Views & Models               
-* support no model on creation
+* support no model on creation - done
     * needModel == false
     * needModel == true
   
