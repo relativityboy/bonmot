@@ -30,10 +30,10 @@ Rough notes to organize my thoughts. Test-stubs to follow.
     * needModel == true
   
 * setModel
-    * from no model
-        * control binding updated
-            * test ui <> model
-        * model cid injection updated
+    * from no model - done
+        * control binding updated - done
+            * test ui <> model - done
+        * model cid injection updated - done
     * change model
         * control binding updated
             * test ui <> model
