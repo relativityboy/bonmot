@@ -189,6 +189,7 @@ define([
 
     injectModelCid:function() {
       this.$el.attr('data-m-cid', this.model.cid);
+      this.$el.data('m-cid', this.model.cid);
     },
 
     injectUnique:function() {

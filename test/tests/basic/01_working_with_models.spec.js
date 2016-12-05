@@ -97,7 +97,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
         };
       });
 
-      it("instantiated empty. setModel updates data-cid & data bindings", function () {
+      it("instantiated empty. .setModel updates data-cid & data bindings", function () {
         var personModel = new Person.Model(personData),
           upatedFirstName = "CornCob",
           upatedLastName = "Applecore";
@@ -122,6 +122,45 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
         assert(upatedFirstName === personModel.get('firstName'), '.firstName updates on .w-atr-firstName input element update');
 
         assert($example.find('.w-atr-displayName').html() === personModel.get('displayName'), '.w-atr-displayName is bound to .displayName (innerHTML)');
+      });
+
+      it("instantiated w/model. .setModel updates data-cid & data bindings", function () {
+        var oldMCID,
+          updateModelJSON = {
+            firstName:"Glorp",
+            lastName:"Frop"
+          },
+          updateModel = new Person.Model(updateModelJSON),
+          upatedFirstName = "CornCob",
+          upatedLastName = "Applecore";
+
+        person = new Person.View({
+          el: exampleNode,
+          model:personData
+        });
+
+        oldMCID = $example.data('m-cid');
+
+        person.setModel(updateModel);
+
+
+        expect(oldMCID).to.not.equal(updateModel.cid);
+
+        expect($example.data('m-cid')).to.equal(updateModel.cid);
+
+        assert($example.find('.w-atr-firstName').val() === updateModel.get('firstName'), '.w-atr-firstName is bound to .firstName value');
+        assert($example.find('.w-atr-lastName').val() === updateModel.get('lastName'), '.w-atr-lastName is bound to .lastName value');
+
+        updateModel.set('lastName', upatedLastName);
+
+        assert($example.find('.w-atr-lastName').val() === upatedLastName, '.w-atr-lastName updates on model update');
+
+        $example.find('.w-atr-firstName').val(upatedFirstName);
+        $example.find('.w-atr-firstName').trigger('change'); //manual triggering of user event
+
+        assert(upatedFirstName === updateModel.get('firstName'), '.firstName updates on .w-atr-firstName input element update');
+
+        assert($example.find('.w-atr-displayName').html() === updateModel.get('displayName'), '.w-atr-displayName is bound to .displayName (innerHTML)');
       });
 
 
