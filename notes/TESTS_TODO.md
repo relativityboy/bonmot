@@ -34,7 +34,7 @@ Rough notes to organize my thoughts. Test-stubs to follow.
         * control binding updated - done
             * test ui <> model - done
         * model cid injection updated - done
-    * change model  
+    * change model  - done
         * control binding updated
             * test ui <> model
                 * test old model to see that it is NOT updated

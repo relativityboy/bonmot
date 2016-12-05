@@ -126,6 +126,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
 
       it("instantiated w/model. .setModel updates data-cid & data bindings", function () {
         var oldMCID,
+          personModel = new Person.Model(personData),
           updateModelJSON = {
             firstName:"Glorp",
             lastName:"Frop"
@@ -136,7 +137,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
 
         person = new Person.View({
           el: exampleNode,
-          model:personData
+          model:personModel
         });
 
         oldMCID = $example.data('m-cid');
@@ -161,6 +162,9 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
         assert(upatedFirstName === updateModel.get('firstName'), '.firstName updates on .w-atr-firstName input element update');
 
         assert($example.find('.w-atr-displayName').html() === updateModel.get('displayName'), '.w-atr-displayName is bound to .displayName (innerHTML)');
+
+        assert(personData.firstName === personModel.get('firstName'), '.firstName of original model is unmodified');
+        assert(personData.lastName === personModel.get('lastName'), '.lastName of original model is unmodified');
       });
 
 
