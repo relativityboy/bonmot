@@ -187,9 +187,12 @@ define([
 
     },
 
-    injectModelCid:function() {
-      this.$el.attr('data-m-cid', this.model.cid);
-      this.$el.data('m-cid', this.model.cid);
+    injectModelCid:function(cid) {
+      if(arguments.length !== 1) {
+        cid = this.model.cid;
+      }
+      this.$el.attr('data-m-cid', cid);
+      this.$el.data('m-cid', cid); //because caching.
     },
 
     injectUnique:function() {
@@ -308,6 +311,7 @@ define([
     _unsetModel: function(newModel) {
       var model = false;
       if(this.model) {
+        this.injectModelCid('');
         this.model.off(null, null, this);
         this.unstickit();
         if(this.model.views) {

@@ -41,17 +41,14 @@ Rough notes to organize my thoughts. Test-stubs to follow.
         * model cid injection updated
         
     * null model
-        * for needsmodel == false
-            * clearUIOnUndefinedModel == false
-                * model cid injection updated
-                * test ui <> model
-                    * test old model to see that it is NOT updated
-            * clearUIOnUndefinedModel == true
-                * model cid injection updated
-                * test ui <> model
-                    * test old model to see that it is NOT updated
-        * for needsmodel == true
-            * test that html is gone.
+        * clearUIOnUndefinedModel == false
+            * model cid injection updated
+            * test ui <> model
+                * test old model to see that it is NOT updated
+        * clearUIOnUndefinedModel == true
+            * model cid injection updated
+            * test ui <> model
+                * test old model to see that it is NOT updated
 
 
 ###Inheritance preservation tests

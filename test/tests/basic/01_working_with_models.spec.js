@@ -81,7 +81,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
 
     });
 
-    describe("Testing .setModel & related effects", function() {
+    describe("Testing .setModel(someModel) ", function() {
       beforeEach(function() {
         if(person) {
           person.remove();
@@ -97,7 +97,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
         };
       });
 
-      it("instantiated empty. .setModel updates data-cid & data bindings", function () {
+      it("updates data-cid & data bindings when instantiated empty.", function () {
         var personModel = new Person.Model(personData),
           upatedFirstName = "CornCob",
           upatedLastName = "Applecore";
@@ -124,7 +124,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
         assert($example.find('.w-atr-displayName').html() === personModel.get('displayName'), '.w-atr-displayName is bound to .displayName (innerHTML)');
       });
 
-      it("instantiated w/model. .setModel updates data-cid & data bindings", function () {
+      it("updates data-cid & data bindings when instantiated w/model.", function () {
         var oldMCID,
           personModel = new Person.Model(personData),
           updateModelJSON = {
@@ -167,7 +167,76 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
         assert(personData.lastName === personModel.get('lastName'), '.lastName of original model is unmodified');
       });
 
+    });
 
+    /**
+     * tests below for when .needsModel === true are not necessary because UI is removed from dom, so the below scenarios
+     * are not possible.
+     *
+     * Removed from DOM test is in .needsModel tests.
+     */
+    describe("Testing .setModel(null/undefined) .needsModel=false", function() {
+      var beforeEachNullModel = function() {
+        if(person) {
+          person.remove();
+        }
+        $body.html(hbsTestContainer());
+
+        $example = $(exampleFinder);
+        exampleNode = $example[0];
+
+        personData = {
+          "firstName":"Molly",
+          "lastName":"Ringwald"
+        };
+        person = new Person.View({
+          el: exampleNode,
+          model:personData
+        });
+      };
+
+      describe("when .clearUIOnUndefinedModel is false", function() {
+        beforeEach(beforeEachNullModel);
+        it("updates m-cid to null string", function() {
+          person.clearUIOnUndefinedModel = false;
+          person.setModel();
+          expect($example.attr('data-m-cid')).to.equal('');
+        });
+
+
+        it("does not clear ui of data");
+
+        it("removes event bindings on old model");
+      });
+
+      describe("when .clearUIOnUndefinedModel is true", function() {
+        beforeEach(beforeEachNullModel);
+        it("updates m-cid to null string", function() {
+          person.setModel();
+          expect($example.attr('data-m-cid')).to.equal('');
+        });
+
+
+        it("clears ui of data");
+
+        it("removes event bindings on old model");
+      });
+
+
+
+      /*
+       * for needsmodel == false
+       * clearUIOnUndefinedModel == false
+       * model cid injection updated
+       * test ui <> model
+       * test old model to see that it is NOT updated
+       * clearUIOnUndefinedModel == true
+       * model cid injection updated
+       * test ui <> model
+       * test old model to see that it is NOT updated
+       * for needsmodel == true
+       * test that html is gone.
+       */
     });
   });
 
