@@ -204,9 +204,26 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
         });
 
 
-        it("does not clear ui of data");
+        it("does not clear ui of data", function() {
+          person.clearUIOnUndefinedModel = false; //the behavior can be configured per-instance, or in the .extend declaration
 
-        it("removes event bindings on old model");
+          var personModel = person.model;
+
+          person.setModel();
+          assert($example.find('.w-atr-firstName').val() === personModel.get('firstName'), '.w-atr-firstName is unchanged after unset');
+          assert($example.find('.w-atr-lastName').val() === personModel.get('lastName'), '.w-atr-lastName is unchanged after unset');
+          assert($example.find('.w-atr-displayName').html() === personModel.get('displayName'), '.w-atr-displayName is unchanged after unset');
+        });
+
+        it("removes event bindings on old model", function() {
+          var personModel = person.model;
+          person.setModel();
+
+          $example.find('.w-atr-firstName').val(personData.firstName + "asdf");
+          $example.find('.w-atr-firstName').trigger('change'); //manual triggering of user event
+
+          assert(personData.firstName === personModel.get('firstName'), '.firstName of original model is unmodified');
+        });
       });
 
       describe("when .clearUIOnUndefinedModel is true", function() {
@@ -217,9 +234,22 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
         });
 
 
-        it("clears ui of data");
+        it("clears ui of data", function() {
+          person.setModel();
+          assert($example.find('.w-atr-firstName').val() === '', '.w-atr-firstName is empty');
+          assert($example.find('.w-atr-lastName').val() === '', '.w-atr-lastName is empty');
+          assert($example.find('.w-atr-displayName').html() === '', '.w-atr-displayName is empty');
+        });
 
-        it("removes event bindings on old model");
+        it("removes event bindings on old model", function() {
+          var personModel = person.model;
+          person.setModel();
+
+          $example.find('.w-atr-firstName').val(personData.firstName + "asdf");
+          $example.find('.w-atr-firstName').trigger('change'); //manual triggering of user event
+
+          assert(personData.firstName === personModel.get('firstName'), '.firstName of original model is unmodified');
+        });
       });
 
 
