@@ -1,60 +1,18 @@
 #Tests to be written
-Rough notes to organize my thoughts. Test-stubs to follow.
-
-###Basic View Tests
-
-####Fundamentals
-* basic .hbs population - done
-* model hydration via .Model - done
-* event binding with .uiBindings   - done
-* control binding - done
-* injectunique class
-    * injects class - done
-    * throws error on duplicate unique class - done
-* inject view cid - done
-* inject model cid - done
-* .$elf finds only within view dom scope - done
-* .$ctrl contains control elements - done
-* .classSuffix - done (all)
-    * .$ctrl missing elements without suffix
-    * .w-ctrl & .ctrl
-        * not bound if missing suffix
-        * bound if suffix
-    * .w-atr elements
-        * not bound if missing suffix
-        * bound if suffix 
-  
-####Views & Models               
-* support no model on creation - done
-    * needModel == false
-    * needModel == true
-  
-* setModel
-    * from no model - done
-        * control binding updated - done
-            * test ui <> model - done
-        * model cid injection updated - done
-    * change model  - done
-        * control binding updated
-            * test ui <> model
-                * test old model to see that it is NOT updated
-        * model cid injection updated
-        
-    * null model
-        * clearUIOnUndefinedModel == false
-            * model cid injection updated
-            * test ui <> model
-                * test old model to see that it is NOT updated
-        * clearUIOnUndefinedModel == true
-            * model cid injection updated
-            * test ui <> model
-                * test old model to see that it is NOT updated
-
 
 ###Inheritance preservation tests
-* replace hbs. & preserve atr and ctrl
-* replace 1 ctrl binding
-* replace atr bindings
+* preservation and replacement of functions
+    * Extend BonMot.View w new function, then extend the resulting view. 
+    Be sure function is still present.
+    * Extend BonMot.View w new function, extend the resulting view but over-ride. Be sure 
+    function is over-ridden, also check that instances of 'parent' have original function
+        
+* replace hbs.
+    * parent/child hbs replacement. Be sure each renders correct template
+* control binding inheritance
+    * create parent with 2 ctrl functions, replace 1 ctrl binding in child. Be sure correct
+    binding functions fire for both parent and child instances
+* replace atr bindings on uiBindings
 
 ###Child View Tests
 * Auto Instantiation of child view
