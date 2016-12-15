@@ -46,3 +46,10 @@
             * model cid injection updated
             * test ui <> model
                 * test old model to see that it is NOT updated
+
+###Inheritance preservation tests
+* preservation and replacement of functions
+    * Extend BonMot.View w/new function, then extend the resulting view. 
+    Be sure function is still present.
+    * Extend BonMot.View w/new function, extend the resulting view but over-ride. Be sure 
+    function is over-ridden, also check that instances of 'parent' have original function                

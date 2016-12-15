@@ -1,11 +1,6 @@
 #Tests to be written
 
 ###Inheritance preservation tests
-* preservation and replacement of functions
-    * Extend BonMot.View w new function, then extend the resulting view. 
-    Be sure function is still present.
-    * Extend BonMot.View w new function, extend the resulting view but over-ride. Be sure 
-    function is over-ridden, also check that instances of 'parent' have original function
         
 * replace hbs.
     * parent/child hbs replacement. Be sure each renders correct template
