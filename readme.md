@@ -10,7 +10,9 @@ some of the more popular frameworks.
 Enter BonMot. The js app-engine for your future.
 
 BonMot eliminates much of the glue while still giving you control over how you create your application. 
-Under the hood BonMot uses Stickit, Handlebars, and DW-Backbone. It gives you all the power of these
+Under the hood BonMot uses [Stickit](https://github.com/NYTimes/backbone.stickit),
+[Handlebars](https://github.com/wycats/handlebars.js), 
+and [DW-Backbone](https://github.com/relativityboy/dw-backbone). It gives you all the power of these
 libraries while providing you with a much more terse, and clear way to express yourself.
 
 One of the best-parts, because most of BonMot's magic is done when you call Model.extend and 

@@ -5,7 +5,7 @@
 * model hydration via .Model
 * event binding with .uiBindings  
 * control binding
-* injectunique class
+* inject unique class
     * injects class
     * throws error on duplicate unique class
 * inject view cid
