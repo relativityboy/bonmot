@@ -1,5 +1,5 @@
-define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./fundamentals/person', './fundamentals/person'],
-  function(hbsTestContainer, $, _, hbsPerson, Person) {
+define(['hbs!test/resources/index', 'jquery','underscore', 'bonmot', 'hbs!./fundamentals/person', './fundamentals/person'],
+  function(hbsTestContainer, $, _, Bonmot, hbsPerson, Person) {
 
   describe("Basic Functionality - fundamentals", function () {
     var $body, $example, exampleNode, person, personData, fnBfe;
@@ -88,7 +88,21 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./fundamentals/p
         assert(person.$elf('.w-atr-displayName').val() != person.model.get('displayName'), 'person.model does not have bound property \'displayName\'');
       });
 
-      it("chooses .bindings declarations over uiBindings");
+      it("chooses .bindings declarations over uiBindings", function() {
+        var bindings = {
+            '.w-atr-firstName': {
+              observe: 'lastName'
+            }
+          },
+          View = Bonmot.View.extend({
+            uiBindings:['firstName', 'lastName'],
+            bindings:bindings,
+            hbs:Person.View.prototype.hbs
+          });
+
+        expect(bindings['.w-atr-firstName']).to.equal(View.prototype.bindings['.w-atr-firstName']);
+
+      });
     });
 
     describe("control bindings", function() {

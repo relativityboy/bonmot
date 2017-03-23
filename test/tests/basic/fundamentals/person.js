@@ -45,7 +45,6 @@ define([
       ctrlKeyUpFn:function() {
         //no-op
       }
-
     });
 
     _export.ViewSuffix = _export.View.extend({
