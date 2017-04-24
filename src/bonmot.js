@@ -13,7 +13,7 @@ define([
   Stickit,
   DWBackbone
 ) {
-  var _export = _.clone(DWBackbone),
+  var exports = _.clone(DWBackbone),
     CollectionView,
     View,
     vTemp, //here because pointers are a terrible thing to waste
@@ -55,7 +55,7 @@ define([
   };
 
   //ROOT VIEW
-  View = _export.View = Backbone.View.extend({
+  View = Backbone.View.extend({
     /**
      * This is the declaration of the Model 'type' to be used with this view.
      * It is strongly recommended if this view has child-views.
@@ -241,7 +241,7 @@ define([
 
       if(!init.primitiveRender && this.Model && this.Model.prototype._setCollections[atrName] ) {
         options.childView = init.view;
-        this.childViews[atrName] = new _export.CollectionView(options);
+        this.childViews[atrName] = new CollectionView(options);
       } else {
         this.childViews[atrName] = new init.view(options);
       }
@@ -257,7 +257,7 @@ define([
      * If a model was already set on the view, it is unset, and unbound.
      * ** Nested views and models must be handled manually at this time via the 'unsetModel' and 'setModel' events.
      * @param model
-     * @returns {_exports.View}
+     * @returns {exportss.View}
      */
     setModel:function(model) {
       if(model === this.model) {
@@ -291,7 +291,7 @@ define([
         if(this.needsModel) {
           return this.remove();
         } else if(this.clearUIOnUndefinedModel) {
-          this.model = new _export.Model();
+          this.model = new Model();
           this.stickit();
           this.unstickit();
           delete this.model;
@@ -505,13 +505,13 @@ define([
     return vTemp;
   };
 
-  _export.Model = DWBackbone.Model.extend({
+  var Model = DWBackbone.Model.extend({
     /**
      * This should get into DW-Backbone @ some point. Fingers crossed.
      */
     dispose:function() {
       for(var i in this.attributes) if(this.hasOwnProperty(i)) {
-        if(((this.attributes[i] instanceof Backbone.Model) === true) || ((this.attributes[i] instanceof _export.Collection) === true)) {
+        if(((this.attributes[i] instanceof Backbone.Model) === true) || ((this.attributes[i] instanceof DWBackbone.Collection) === true)) {
           try {
             this.attributes[i].dispose();
           } catch (e) {
@@ -548,7 +548,7 @@ define([
    *
    * @type {any}
    */
-  CollectionView = _export.CollectionView = _export.View.extend({
+  var CollectionView = View.extend({
     Model:DWBackbone.Collection,
     firstPage:1,
     bindings:{'.w-atr-page':'page', '.w-atr-pageLength':'pageLength'},
@@ -771,5 +771,11 @@ define([
     }
   });
 
-  return _.clone(_export);
+  exports = {
+    Model: Model,
+    View: View,
+    CollectionView: CollectionView
+  }
+
+  return exports;
 });
