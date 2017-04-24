@@ -64,7 +64,7 @@ define([
   }
 
   //ROOT VIEW
-  View = exports.View = Backbone.View.extend({
+  View = Backbone.View.extend({
     /**
      * This is the declaration of the Model 'type' to be used with this view.
      * It is strongly recommended if this view has child-views.
@@ -265,7 +265,7 @@ define([
 
       if(!init.primitiveRender && this.Model && this.Model.prototype._setCollections[atrName] ) {
         options.childView = init.view;
-        this.childViews[atrName] = new exports.CollectionView(options);
+        this.childViews[atrName] = new CollectionView(options);
       } else {
         this.childViews[atrName] = new init.view(options);
       }
@@ -315,7 +315,7 @@ define([
         if(this.needsModel) {
           return this.remove();
         } else if(this.clearUIOnUndefinedModel) {
-          this.model = new exports.Model();
+          this.model = new Model();
           this.stickit();
           this.unstickit();
           delete this.model;
@@ -536,13 +536,13 @@ define([
     return vTemp;
   };
 
-  exports.Model = DWBackbone.Model.extend({
+  var Model = DWBackbone.Model.extend({
     /**
      * This should get into DW-Backbone @ some point. Fingers crossed.
      */
     dispose:function() {
       for(var i in this.attributes) if(this.hasOwnProperty(i)) {
-        if(((this.attributes[i] instanceof Backbone.Model) === true) || ((this.attributes[i] instanceof exports.Collection) === true)) {
+        if(((this.attributes[i] instanceof Backbone.Model) === true) || ((this.attributes[i] instanceof DWBackbone.Collection) === true)) {
           try {
             this.attributes[i].dispose();
           } catch (e) {
@@ -579,7 +579,7 @@ define([
    *
    * @type {any}
    */
-  CollectionView = exports.CollectionView = exports.View.extend({
+  var CollectionView = View.extend({
     Model:DWBackbone.Collection,
     firstPage:1,
     bindings:{'.w-atr-page':'page', '.w-atr-pageLength':'pageLength'},
@@ -808,5 +808,11 @@ define([
     }
   });
 
-  return _.clone(exports);
+  exports = {
+    Model: Model,
+    View: View,
+    CollectionView: CollectionView
+  }
+
+  return exports;
 });
