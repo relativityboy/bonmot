@@ -1,3 +1,4 @@
-#Todo
-The following are things that have made it through the imagining process and will be implemented.
+## Todo 
+* complete the template engine injection. Pay attention to ChildView and CollectionView!
+
 * router support - easy event subscription

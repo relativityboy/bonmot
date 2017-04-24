@@ -2,18 +2,16 @@ define([
   'underscore',
   'backbone',
   'jquery',
-  'handlebars',
   'stickit',
   'dw-backbone'
 ], function(
   _,
   Backbone,
   jQuery,
-  Handlebars,
   Stickit,
   DWBackbone
 ) {
-  var _export = _.clone(DWBackbone),
+  var exports = _.clone(DWBackbone),
     CollectionView,
     View,
     vTemp, //here because pointers are a terrible thing to waste
@@ -54,8 +52,19 @@ define([
     //no-op
   };
 
+
+  exports.setTemplateCompiler = function(engine, compilerFnName) {
+    View.prototype.templateCompiler = engine;
+
+    if(compilerFnName) {
+      View.prototype.templateCompiler = function(str) {
+        return engine[compilerFnName](str);
+      }
+    }
+  }
+
   //ROOT VIEW
-  View = _export.View = Backbone.View.extend({
+  View = exports.View = Backbone.View.extend({
     /**
      * This is the declaration of the Model 'type' to be used with this view.
      * It is strongly recommended if this view has child-views.
@@ -67,15 +76,27 @@ define([
     parentView:false,
 
     /**
-     * Handlebars Template or other 'function callable' template. Called when the view is instantiated.
-     * If model is present on construction, will also be passed a toJSON representation of the model.
+     * Template string or function that generates html. Called when the view is instantiated.
+     * Result is inserted into the dom and replaces el.innerHTML.
+     *
+     * If model is present on construction, will also be passed a toJSON representation of the model,
+     * mixed with tplData.
+     *
+     * If is string, templateCompiler must be set.
+     *
+     * **if .tpl property exists in constructor argument, it overrides this declaration
      */
-    hbs:'',
+    tpl:false,
 
     /**
-     * Data used to populate the HBS templates.
+     * {} used as a mix-in to populate tpl.
      */
-    hbsData:false,
+    tplData:{},
+
+    /**
+     * template engine used to compile template files.
+     */
+    templateCompiler:false,
 
     /**
      * Used to locate properly suffixed attribute or control elements within the views root DOM node.
@@ -127,8 +148,8 @@ define([
 
     constructor: function(options) {
       var $el,
-        hbs = (options.hbs)? options.hbs : this.hbs,
-        hbsData = {};
+        tpl = (options.tpl)? options.tpl : this.tpl,
+        tplData = {};
 
       options = (options)? options : {};
 
@@ -150,18 +171,21 @@ define([
         this.$el = $el;//needed for $elf & findControlElements
       }
 
-      if (typeof hbs === 'string') {
-        hbs = Handlebars.compile(hbs);
+      if (typeof tpl === 'string') {
+        if(!this.templateCompiler) {
+          throw new Error('This View requires .templateCompiler to be set when .tpl is a string')
+        }
+        tpl = this.templateCompiler(tpl);
       }
-      if(this.hbsData) {
-        if (this.hbsData === true && options.model) {
-          hbsData = options.model.toJSON();
+      if(this.tplData) {
+        if (this.tplData === true && options.model) {
+          tplData = options.model.toJSON();
         } else {
-          hbsData = this.hbsData;
+          tplData = this.tplData;
         }
       }
 
-      $el = jQuery(hbs(hbsData));
+      $el = jQuery(tpl(tplData));
 
       if(options.el) {
         this.el = options.el;
@@ -241,7 +265,7 @@ define([
 
       if(!init.primitiveRender && this.Model && this.Model.prototype._setCollections[atrName] ) {
         options.childView = init.view;
-        this.childViews[atrName] = new _export.CollectionView(options);
+        this.childViews[atrName] = new exports.CollectionView(options);
       } else {
         this.childViews[atrName] = new init.view(options);
       }
@@ -257,7 +281,7 @@ define([
      * If a model was already set on the view, it is unset, and unbound.
      * ** Nested views and models must be handled manually at this time via the 'unsetModel' and 'setModel' events.
      * @param model
-     * @returns {_exports.View}
+     * @returns {exports.View}
      */
     setModel:function(model) {
       if(model === this.model) {
@@ -291,7 +315,7 @@ define([
         if(this.needsModel) {
           return this.remove();
         } else if(this.clearUIOnUndefinedModel) {
-          this.model = new _export.Model();
+          this.model = new exports.Model();
           this.stickit();
           this.unstickit();
           delete this.model;
@@ -398,8 +422,15 @@ define([
       }
     };
 
-    if(subView.hbs && typeof subView.hbs !== 'function') {
-      subView.hbs = Handlebars.compile(subView.hbs);
+    if(subView.tpl && typeof subView.tpl !== 'function') {
+      if(subView.templateCompiler) {
+        subView.tpl = subView.templateCompiler(subView.tpl);
+      } else if(this.prototype.templateCompiler) {
+        subView.tpl = this.prototype.templateCompiler(subView.tpl);
+      } else {
+        throw new Error('Extending this View requires .templateCompiler to be set when .tpl is a string')
+      }
+
     }
 
     /**
@@ -422,7 +453,7 @@ define([
           subView.atrViews[atrName] = {
             find: '.w-atr-' + atrName + classSuffix,
             view: function(options) {
-              options.hbs = viewDeclaration;
+              options.tpl = viewDeclaration;
               return new AttributeRenderer(options);
             }
           };
@@ -505,13 +536,13 @@ define([
     return vTemp;
   };
 
-  _export.Model = DWBackbone.Model.extend({
+  exports.Model = DWBackbone.Model.extend({
     /**
      * This should get into DW-Backbone @ some point. Fingers crossed.
      */
     dispose:function() {
       for(var i in this.attributes) if(this.hasOwnProperty(i)) {
-        if(((this.attributes[i] instanceof Backbone.Model) === true) || ((this.attributes[i] instanceof _export.Collection) === true)) {
+        if(((this.attributes[i] instanceof Backbone.Model) === true) || ((this.attributes[i] instanceof exports.Collection) === true)) {
           try {
             this.attributes[i].dispose();
           } catch (e) {
@@ -548,15 +579,15 @@ define([
    *
    * @type {any}
    */
-  CollectionView = _export.CollectionView = _export.View.extend({
+  CollectionView = exports.CollectionView = exports.View.extend({
     Model:DWBackbone.Collection,
     firstPage:1,
     bindings:{'.w-atr-page':'page', '.w-atr-pageLength':'pageLength'},
     constructor:function(options) {
       var $el,
         collection = false,
-        hbs = (options.hbs)? options.hbs : this.hbs,
-        hbsData = {},
+        tpl = (options.tpl)? options.tpl : this.tpl,
+        tplData = {},
         model;
 
       this.firstPage = (this.firstPage === 0)? 0 : 1;
@@ -586,14 +617,20 @@ define([
         throw new Error("CollectionView: must have a this.Model, or have .model instance passed on construction. These must be instanceof Backbone.Collection");
       }
 
-      if (typeof hbs === 'string') {
-        hbs = Handlebars.compile(hbs);
+      if (typeof tpl === 'string') {
+        if(this.templateCompiler) {
+          tpl = this.templateCompiler(tpl);
+        } else if(this.ChildView.templateCompiler) {
+          tpl = this.ChildView.templateCompiler(tpl);
+        } else {
+          tpl = _.bind(function() { return this;}, tpl);
+        }
       }
-      if(this.hbsData) {
-        hbsData = this.hbsData;
+      if(this.tplData) {
+        tplData = this.tplData;
       }
 
-      $el = jQuery(hbs(hbsData));
+      $el = jQuery(tpl(tplData));
 
       if(options.el) {
         this.el = options.el;
@@ -771,5 +808,5 @@ define([
     }
   });
 
-  return _.clone(_export);
+  return _.clone(exports);
 });
