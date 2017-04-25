@@ -159,17 +159,21 @@ define([
       if(options.hasOwnProperty('parentView')) {
         this.parentView = options.parentView;
       }
-
+/*
       if(options.el) {
         $el = jQuery(options.el);
         this.$el = $el;//needed for $elf & findControlElements
-      }
+      }*/
+
 
       if (typeof tpl === 'string') {
         tpl = this.templateCompiler(tpl);
+      } else if(!tpl) {
+        tpl = function() { return '';}
       }
+
       if(this.tplData) {
-        if (this.tplData === true && options.model) {
+        if (true === this.tplData && options.model) {
           tplData = options.model.toJSON();
         } else {
           tplData = this.tplData;
