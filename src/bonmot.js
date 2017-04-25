@@ -804,11 +804,9 @@ define([
     }
   });
 
-  exports = {
-    Model: Model,
-    View: View,
-    CollectionView: CollectionView
-  }
+  exports.Model = Model;
+  exports.View = View;
+  exports.CollectionView = CollectionView;
 
   return exports;
 });
