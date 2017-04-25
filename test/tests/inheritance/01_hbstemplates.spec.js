@@ -1,3 +1,9 @@
+/***
+ * NEED TO CHANGE NAME TO TEMPLATE TESTS
+ * AND TO TEXT FOR PROPER 'TEMPLATE COMPILER' INHERITANCE AND OVER-RIDING
+ */
+
+
 define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./hbstemplates/person', './hbstemplates/person'],
   function(hbsTestContainer, $, _, hbsPerson, Person) {
 

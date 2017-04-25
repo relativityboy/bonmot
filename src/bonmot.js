@@ -17,9 +17,13 @@ define([
     vTemp, //here because pointers are a terrible thing to waste
     uniques = {};
 
+  var fnTemplateCompiler = function(tpl) {
+    return function() { return tpl};
+  };
+
   var AttributeRenderer = function(options) {
     this.$el = jQuery(options.el);
-    this.hbs = options.hbs;
+    this.tpl = options.tpl;
     //options.model = (options.model)? options.model : {};
     this.setModel(options.model);
   };
@@ -32,10 +36,10 @@ define([
     object = (object instanceof Backbone.Collection || object instanceof Backbone.Model)? object.toJSON() : object;
     if(object.constructor === Array) {
       for(var i = 0; i < object.length; i++) {
-        html += this.hbs(object[i]);
+        html += this.tpl(object[i]);
       }
     } else {
-      html = this.hbs(object);
+      html = this.tpl(object);
     }
     this.$el.html(html);
   };
@@ -45,23 +49,12 @@ define([
    */
   AttributeRenderer.prototype.remove = function() {
     delete this.$el;
-    delete this.hbs;
+    delete this.tpl;
   };
 
   AttributeRenderer.prototype.on = function() {
     //no-op
   };
-
-
-  exports.setTemplateCompiler = function(engine, compilerFnName) {
-    View.prototype.templateCompiler = engine;
-
-    if(compilerFnName) {
-      View.prototype.templateCompiler = function(str) {
-        return engine[compilerFnName](str);
-      }
-    }
-  }
 
   //ROOT VIEW
   View = Backbone.View.extend({
@@ -95,8 +88,9 @@ define([
 
     /**
      * template engine used to compile template files.
+     * By default it returns the string defined by .tpl
      */
-    templateCompiler:false,
+    templateCompiler:fnTemplateCompiler,
 
     /**
      * Used to locate properly suffixed attribute or control elements within the views root DOM node.
@@ -172,9 +166,6 @@ define([
       }
 
       if (typeof tpl === 'string') {
-        if(!this.templateCompiler) {
-          throw new Error('This View requires .templateCompiler to be set when .tpl is a string')
-        }
         tpl = this.templateCompiler(tpl);
       }
       if(this.tplData) {
@@ -425,12 +416,9 @@ define([
     if(subView.tpl && typeof subView.tpl !== 'function') {
       if(subView.templateCompiler) {
         subView.tpl = subView.templateCompiler(subView.tpl);
-      } else if(this.prototype.templateCompiler) {
-        subView.tpl = this.prototype.templateCompiler(subView.tpl);
       } else {
-        throw new Error('Extending this View requires .templateCompiler to be set when .tpl is a string')
+        subView.tpl = this.prototype.templateCompiler(subView.tpl);
       }
-
     }
 
     /**
@@ -448,7 +436,9 @@ define([
             view: viewDeclaration
           };
         } else if(typeof viewDeclaration === 'string' || typeof viewDeclaration === 'function') {
-          viewDeclaration = (typeof viewDeclaration === 'string')? Handlebars.compile(viewDeclaration) : viewDeclaration;
+          if(typeof viewDeclaration === 'string') {
+            viewDeclaration = (subView.hasOwnProperty('templateCompiler'))? subView.templateCompiler(viewDeclaration) : this.prototype.templateCompiler(viewDeclaration);
+          }
 
           subView.atrViews[atrName] = {
             find: '.w-atr-' + atrName + classSuffix,
@@ -581,9 +571,10 @@ define([
    */
   var CollectionView = View.extend({
     Model:DWBackbone.Collection,
-    firstPage:1,
-    bindings:{'.w-atr-page':'page', '.w-atr-pageLength':'pageLength'},
-    constructor:function(options) {
+    firstPage: 1,
+    bindings: {'.w-atr-page':'page', '.w-atr-pageLength':'pageLength'},
+    templateCompiler: fnTemplateCompiler,
+    constructor: function(options) {
       var $el,
         collection = false,
         tpl = (options.tpl)? options.tpl : this.tpl,
@@ -618,12 +609,13 @@ define([
       }
 
       if (typeof tpl === 'string') {
-        if(this.templateCompiler) {
+        //while the default template compiler may be needed elsewhere in this view,
+        //because in most cases CollectionView acts like magic wiring it will not need to be extened
+        //Therefor use the ChildView's compiler
+        if(this.templateCompiler !== fnTemplateCompiler) {
           tpl = this.templateCompiler(tpl);
-        } else if(this.ChildView.templateCompiler) {
-          tpl = this.ChildView.templateCompiler(tpl);
         } else {
-          tpl = _.bind(function() { return this;}, tpl);
+          tpl = this.ChildView.templateCompiler(tpl);
         }
       }
       if(this.tplData) {
