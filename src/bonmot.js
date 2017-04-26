@@ -21,6 +21,14 @@ define([
     return function() { return tpl};
   };
 
+  /**
+   * *Magic*
+   * AttributeRenderer is a super simple stand-in for a BonMot.View
+   * It allows BonMot to have the same code for Child Views and simple templates of 'fill it in' html
+   *
+   * @param options
+   * @constructor
+   */
   var AttributeRenderer = function(options) {
     this.$el = jQuery(options.el);
     this.tpl = options.tpl;
@@ -254,6 +262,7 @@ define([
         el: this.$elf(init.find)[0],
         parentView:this
       };
+
       if(model) {
         options.model = model;
       }
@@ -584,12 +593,16 @@ define([
         tpl = (options.tpl)? options.tpl : this.tpl,
         tplData = {},
         model;
-
       this.firstPage = (this.firstPage === 0)? 0 : 1;
       this.childViews = {};
       if(!options.el) {
         throw new Error('CollectionView must be passed an element on construction!');
       }
+      if(!options.hasOwnProperty('parentView')) {
+        throw new Error('CollectionView must be passed a parentView on construction!')
+      }
+      this.parentView = options.parentView;
+
       if(!this.atrViews) {
         this.atrViews = {};
       }
@@ -612,16 +625,20 @@ define([
         throw new Error("CollectionView: must have a this.Model, or have .model instance passed on construction. These must be instanceof Backbone.Collection");
       }
 
+
       if (typeof tpl === 'string') {
         //while the default template compiler may be needed elsewhere in this view,
-        //because in most cases CollectionView acts like magic wiring it will not need to be extened
+        //because in most cases CollectionView acts like magic wiring it will not need to be extended
         //Therefor use the ChildView's compiler
         if(this.templateCompiler !== fnTemplateCompiler) {
           tpl = this.templateCompiler(tpl);
         } else {
           tpl = this.ChildView.templateCompiler(tpl);
         }
+      } else if(!tpl) {
+        tpl = function() { return '';}
       }
+
       if(this.tplData) {
         tplData = this.tplData;
       }
@@ -700,7 +717,6 @@ define([
         collection = this.collection,
         search = this.model.get('search'),
         searchBy = this.model.get('searchBy');
-
         if(search.length > 0 ) {
           collection = new this.collection.constructor(this.collection.filter(function(model) {
             return (model.get(searchBy).indexOf(search) > -1);
@@ -753,6 +769,7 @@ define([
         model:model,
         parentView:this.parentView
       });
+
       this.$collection.append(this.childViews[model.cid].$el);
     },
     removeChildView:function(cid) {
