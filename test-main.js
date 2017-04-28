@@ -34,7 +34,7 @@ require.config({
   packages: [{
     // Include hbs as a package, so it will find hbs-builder when needed
     name: "hbs",
-    location: "dist/libs",
+    location: "test/resources/hbs_libs",
     main: "hbs"
   }],
   hbs: {

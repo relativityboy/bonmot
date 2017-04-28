@@ -33,7 +33,7 @@ define([
       /**
        * This handlebars template will be automatically rendered when the view is instantiated
        */
-      hbs:tplPerson,
+      tpl:tplPerson,
 
       /**
        * These model attributes will be respectively bound to .w-atr-firstName , .w-atr-lastName , .w-atr-displayName

@@ -1,11 +1,9 @@
 define([
   'hbs!./person',
-  'hbs!./person_suffix',
   'bonmot'
   ],
   function(
     tplPerson,
-    tplPersonSuffix,
     BonMot
   ) {
     var _export = {};
@@ -33,7 +31,7 @@ define([
       /**
        * This handlebars template will be automatically rendered when the view is instantiated
        */
-      tpl:tplPerson,
+      hbs:tplPerson,
 
       /**
        * These model attributes will be respectively bound to .w-atr-firstName , .w-atr-lastName , .w-atr-displayName
@@ -45,11 +43,10 @@ define([
       ctrlKeyUpFn:function() {
         //no-op
       }
+
     });
 
     _export.ViewSuffix = _export.View.extend({
-      tpl:tplPersonSuffix,
-      classSuffix:'compassion'
     });
 
     return _export;

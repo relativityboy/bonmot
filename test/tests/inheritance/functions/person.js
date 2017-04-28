@@ -12,7 +12,7 @@ define([
 
     _export.View = BonMot.View.extend({
       Model:_export.Model,
-      hbs:tplPerson,
+      tpl:tplPerson,
       fnInheritGetApple:function() {
         return this.model.get('firstName');
       },

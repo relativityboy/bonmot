@@ -70,7 +70,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'bonmot', 'hbs!./fund
             el:exampleNode,
             model:personData
           }),
-          ctrlKeys = { //these represent the control elements that have been searched for, and the number of elements that have been found.
+          ctrlKeys = { //these represent the control elements that have been searched for, and the number of elements that we expect to have been found.
             testFunction:0,
             keyUpFn:1
           },
@@ -78,7 +78,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'bonmot', 'hbs!./fund
 
         _.each(ctrlKeys, function(count, key) {
           assert(person.$ctrl.hasOwnProperty(key), 'person.$ctrl has property ' + key);
-          assert(person.$ctrl[key].length === count, key + ' has ' + count + ' elements');
+          assert(person.$ctrl[key].length === count, key + ' has ' + count + ' elements ');
         });
 
         _.each(atrKeys, function(count, key) {

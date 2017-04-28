@@ -1,11 +1,11 @@
 define([
   'hbs!./person',
-  'hbs!./person_suffix',
+  'hbs!./person_bind_prefix',
   'bonmot'
   ],
   function(
     tplPerson,
-    tplPersonSuffix,
+    tplPersonBindPrefix,
     BonMot
   ) {
     var _export = {};
@@ -47,9 +47,9 @@ define([
       }
     });
 
-    _export.ViewSuffix = _export.View.extend({
-      tpl:tplPersonSuffix,
-      classSuffix:'compassion'
+    _export.ViewBindPrefix = _export.View.extend({
+      bindPrefix:'.js',
+      tpl:tplPersonBindPrefix
     });
 
     return _export;

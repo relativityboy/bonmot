@@ -109,7 +109,7 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'hbs!./working_with_m
 
         expect($example.data('m-cid')).to.equal(personModel.cid);
 
-        assert($example.find('.w-atr-firstName').val() === personModel.get('firstName'), '.w-atr-firstName is bound to .firstName value');
+        assert($example.find('.w-atr-firstName').val() === personModel.get('firstName'), '.w-atr-firstName is bound to .firstName value (' + $example.find('.w-atr-firstName').val() + ' == ' + personModel.get('firstName') + ')');
         assert($example.find('.w-atr-lastName').val() === personModel.get('lastName'), '.w-atr-lastName is bound to .lastName value');
 
         personModel.set('lastName', upatedLastName);

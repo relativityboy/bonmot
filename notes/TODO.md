@@ -1,3 +1,3 @@
-#Todo
-The following are things that have made it through the imagining process and will be implemented.
+## Todo 
+* fix pagination on page length greater than number of items
 * router support - easy event subscription

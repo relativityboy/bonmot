@@ -2,26 +2,36 @@ define([
   'underscore',
   'backbone',
   'jquery',
-  'handlebars',
   'stickit',
   'dw-backbone'
 ], function(
   _,
   Backbone,
   jQuery,
-  Handlebars,
   Stickit,
   DWBackbone
 ) {
-  var _export = _.clone(DWBackbone),
+  var exports = _.clone(DWBackbone),
     CollectionView,
     View,
     vTemp, //here because pointers are a terrible thing to waste
     uniques = {};
 
+  var fnTemplateCompiler = function(tpl) {
+    return function() { return tpl};
+  };
+
+  /**
+   * *Magic*
+   * AttributeRenderer is a super simple stand-in for a BonMot.View
+   * It allows BonMot to have the same code for Child Views and simple templates of 'fill it in' html
+   *
+   * @param options
+   * @constructor
+   */
   var AttributeRenderer = function(options) {
     this.$el = jQuery(options.el);
-    this.hbs = options.hbs;
+    this.tpl = options.tpl;
     //options.model = (options.model)? options.model : {};
     this.setModel(options.model);
   };
@@ -34,10 +44,10 @@ define([
     object = (object instanceof Backbone.Collection || object instanceof Backbone.Model)? object.toJSON() : object;
     if(object.constructor === Array) {
       for(var i = 0; i < object.length; i++) {
-        html += this.hbs(object[i]);
+        html += this.tpl(object[i]);
       }
     } else {
-      html = this.hbs(object);
+      html = this.tpl(object);
     }
     this.$el.html(html);
   };
@@ -47,7 +57,7 @@ define([
    */
   AttributeRenderer.prototype.remove = function() {
     delete this.$el;
-    delete this.hbs;
+    delete this.tpl;
   };
 
   AttributeRenderer.prototype.on = function() {
@@ -55,27 +65,51 @@ define([
   };
 
   //ROOT VIEW
-  View = _export.View = Backbone.View.extend({
+  View = Backbone.View.extend({
     /**
      * This is the declaration of the Model 'type' to be used with this view.
      * It is strongly recommended if this view has child-views.
      * It is recommended that the model have BonMot.Model in its prototype chain...
      * IE, the result of a BonMot.Model.extend() operation.
      */
-    Model:false,
-
-    parentView:false,
+    Model: false,
 
     /**
-     * Handlebars Template or other 'function callable' template. Called when the view is instantiated.
-     * If model is present on construction, will also be passed a toJSON representation of the model.
+     * This is the prefix for all classes that wish to bind events, etc.
+     * It will be followed by a '-atr-<attributeName>' or '-ctrl-<functionName>'
      */
-    hbs:'',
+    bindPrefix: '.w',
+    bindAtrPrefix: '.w-atr-',
+    bindCtrlPrefix: '.w-ctrl-',
 
     /**
-     * Data used to populate the HBS templates.
+     * This View's parent view.
      */
-    hbsData:false,
+    parentView: false,
+
+    /**
+     * Template string or function that generates html. Called when the view is instantiated.
+     * Result is inserted into the dom and replaces el.innerHTML.
+     *
+     * If model is present on construction, will also be passed a toJSON representation of the model,
+     * mixed with tplData.
+     *
+     * If is string, templateCompiler must be set.
+     *
+     * **if .tpl property exists in constructor argument, it overrides this declaration
+     */
+    tpl: false,
+
+    /**
+     * {} used as a mix-in to populate tpl.
+     */
+    tplData: {},
+
+    /**
+     * template engine used to compile template files.
+     * By default it returns the string defined by .tpl
+     */
+    templateCompiler: fnTemplateCompiler,
 
     /**
      * Used to locate properly suffixed attribute or control elements within the views root DOM node.
@@ -83,7 +117,7 @@ define([
      * And before you complain - performance comes at a price. Typing out a tiny string is no big deal compared
      * with the horrors of Angular.
      */
-    classSuffix:'',
+    classSuffix: '',
 
     /**
      * This is a unique string or function that identifies this type of view.
@@ -96,13 +130,13 @@ define([
      * String will be injected into the view's root node as a
      * css class. Before injection, dots are transformed to dashes.
      */
-    unique:'',
+    unique: '',
 
     /**
      * If true and the view's model's 'dispose' function is called,
      * this view's 'remove' function will be called, removing it from the DOM.
      */
-    needsModel:false,
+    needsModel: false,
 
     /**
      * If view persists on .setModel(undefined) ...
@@ -114,21 +148,21 @@ define([
      * The only negative side-effect of this is if something is listening
      * for 'stickit' events; additional ones will be generated.
      */
-    clearUIOnUndefinedModel:true,
+    clearUIOnUndefinedModel: true,
 
     /**
      * convenience function for finding elements within this view. Use it!
      * @param cssExpr
      * @returns {*}
      */
-    $elf:function(cssExpr) {
+    $elf: function(cssExpr) {
       return this.$el.find(cssExpr);
     },
 
     constructor: function(options) {
       var $el,
-        hbs = (options.hbs)? options.hbs : this.hbs,
-        hbsData = {};
+        tpl = (options.tpl)? options.tpl : this.tpl,
+        tplData = {};
 
       options = (options)? options : {};
 
@@ -145,23 +179,21 @@ define([
         this.parentView = options.parentView;
       }
 
-      if(options.el) {
-        $el = jQuery(options.el);
-        this.$el = $el;//needed for $elf & findControlElements
+      if (typeof tpl === 'string') {
+        tpl = this.templateCompiler(tpl);
+      } else if(!tpl) {
+        tpl = function() { return '';}
       }
 
-      if (typeof hbs === 'string') {
-        hbs = Handlebars.compile(hbs);
-      }
-      if(this.hbsData) {
-        if (this.hbsData === true && options.model) {
-          hbsData = options.model.toJSON();
+      if(this.tplData) {
+        if (true === this.tplData && options.model) {
+          tplData = options.model.toJSON();
         } else {
-          hbsData = this.hbsData;
+          tplData = this.tplData;
         }
       }
 
-      $el = jQuery(hbs(hbsData));
+      $el = jQuery(tpl(tplData));
 
       if(options.el) {
         this.el = options.el;
@@ -187,7 +219,7 @@ define([
 
     },
 
-    injectModelCid:function(cid) {
+    injectModelCid: function(cid) {
       if(arguments.length !== 1) {
         cid = this.model.cid;
       }
@@ -195,7 +227,7 @@ define([
       this.$el.data('m-cid', cid); //because caching.
     },
 
-    injectUnique:function() {
+    injectUnique: function() {
       this.$el.attr('data-v-cid', this.cid);
       if(this.unique) {
         if(typeof this.unique === 'function') {
@@ -206,7 +238,7 @@ define([
       }
     },
 
-    findControlElements:function() {
+    findControlElements: function() {
       this.$ctrl = {};
       _.each(this.ctrlElementClasses, function(cssExpr,key) {
         this.$ctrl[key] = this.$elf(cssExpr);
@@ -216,7 +248,7 @@ define([
     /**
      * Should be callable multiple times.
      */
-    initChildViews:function() {
+    initChildViews: function() {
       var atrs = (this.hasOwnProperty('model'))? this.model.attributes : {};
 
       _.each(this.atrViews, function(init, atrName) {
@@ -230,18 +262,19 @@ define([
       }, this);
     },
 
-    newChildView:function(atrName, init, model) {
+    newChildView: function(atrName, init, model) {
       var options = {
         el: this.$elf(init.find)[0],
         parentView:this
       };
+
       if(model) {
         options.model = model;
       }
 
       if(!init.primitiveRender && this.Model && this.Model.prototype._setCollections[atrName] ) {
         options.childView = init.view;
-        this.childViews[atrName] = new _export.CollectionView(options);
+        this.childViews[atrName] = new CollectionView(options);
       } else {
         this.childViews[atrName] = new init.view(options);
       }
@@ -257,9 +290,9 @@ define([
      * If a model was already set on the view, it is unset, and unbound.
      * ** Nested views and models must be handled manually at this time via the 'unsetModel' and 'setModel' events.
      * @param model
-     * @returns {_exports.View}
+     * @returns {exports.View}
      */
-    setModel:function(model) {
+    setModel: function(model) {
       if(model === this.model) {
         return this;
       }
@@ -291,7 +324,7 @@ define([
         if(this.needsModel) {
           return this.remove();
         } else if(this.clearUIOnUndefinedModel) {
-          this.model = new _export.Model();
+          this.model = new Model();
           this.stickit();
           this.unstickit();
           delete this.model;
@@ -333,7 +366,7 @@ define([
       }
       return model;
     },
-    remove:function() {
+    remove: function() {
       this._unsetModel();
 
       this.trigger('remove', this);
@@ -367,9 +400,18 @@ define([
       }
     }
 
+    if(subView.hasOwnProperty('bindPrefix')) {
+      if(subView.bindPrefix.indexOf('.') !== 0) {
+        throw new Error('.bindPrefix must being with a dot "." It begins with a "' + subView.bindPrefix[0] + '"');
+      }
+    } else {
+      subView.bindPrefix = this.prototype.bindPrefix;
+    }
+    subView.bindAtrPrefix = subView.bindPrefix + '-atr-';
+    subView.bindCtrlPrefix = subView.bindPrefix + '-ctrl-';
+
     //declared here to make use of classSuffix
     var ctrlEvents = function(fn, fnName) {
-
       var ctrlNameFragment,
         event,
         eventExpression,
@@ -388,8 +430,8 @@ define([
             event = fnNameFragments.shift();
         }
 
-        ctrlNameFragment = DWBackbone.toCamel(fnNameFragments.join('_'));
-        this.ctrlElementClasses[ctrlNameFragment] = '.w-ctrl-' + ctrlNameFragment + classSuffix;
+        ctrlNameFragment = DWBackbone.toCamel(fnNameFragments.join('_')); //this is a bit of a hack
+        this.ctrlElementClasses[ctrlNameFragment] = subView.bindCtrlPrefix + ctrlNameFragment + classSuffix;
         eventExpression = event + ' ' + this.ctrlElementClasses[ctrlNameFragment];
 
         if(!this.events.hasOwnProperty(eventExpression)) {
@@ -398,8 +440,12 @@ define([
       }
     };
 
-    if(subView.hbs && typeof subView.hbs !== 'function') {
-      subView.hbs = Handlebars.compile(subView.hbs);
+    if(subView.tpl && typeof subView.tpl !== 'function') {
+      if(subView.templateCompiler) {
+        subView.tpl = subView.templateCompiler(subView.tpl);
+      } else {
+        subView.tpl = this.prototype.templateCompiler(subView.tpl);
+      }
     }
 
     /**
@@ -413,16 +459,18 @@ define([
       _.each(subView.atrViews, function (viewDeclaration, atrName) {
         if (viewDeclaration.prototype instanceof Backbone.View) {
           subView.atrViews[atrName] = {
-            find: '.w-atr-' + atrName + classSuffix,
+            find: subView.bindAtrPrefix + atrName + classSuffix,
             view: viewDeclaration
           };
         } else if(typeof viewDeclaration === 'string' || typeof viewDeclaration === 'function') {
-          viewDeclaration = (typeof viewDeclaration === 'string')? Handlebars.compile(viewDeclaration) : viewDeclaration;
+          if(typeof viewDeclaration === 'string') {
+            viewDeclaration = (subView.hasOwnProperty('templateCompiler'))? subView.templateCompiler(viewDeclaration) : this.prototype.templateCompiler(viewDeclaration);
+          }
 
           subView.atrViews[atrName] = {
-            find: '.w-atr-' + atrName + classSuffix,
+            find: subView.bindAtrPrefix + atrName + classSuffix,
             view: function(options) {
-              options.hbs = viewDeclaration;
+              options.tpl = viewDeclaration;
               return new AttributeRenderer(options);
             }
           };
@@ -436,8 +484,8 @@ define([
       if(this.prototype.atrViews) {
         _.each(this.prototype.atrViews, function (viewDeclaration, atrName) {
           subView.atrViews[atrName] = _.clone(viewDeclaration);
-          if(subView.atrViews[atrName].find === '.w-atr-' + atrName + parentClassSuffix) {
-            subView.atrViews[atrName].find = '.w-atr-' + atrName + classSuffix;
+          if(subView.atrViews[atrName].find === subView.bindAtrPrefix + atrName + parentClassSuffix) {
+            subView.atrViews[atrName].find = subView.bindAtrPrefix + atrName + classSuffix;
           }
         }, this);
       }
@@ -481,9 +529,9 @@ define([
       }
 
       if(!binder.hasOwnProperty('find')) {
-        binder.find = '.w-atr-' + binder.observe + classSuffix;
-      } else if(binder.find === '.w-atr-' + binder.observe + parentClassSuffix) {
-        binder.find = '.w-atr-' + binder.observe + classSuffix;
+        binder.find = subView.bindAtrPrefix + binder.observe + classSuffix;
+      } else if(binder.find === subView.bindAtrPrefix + binder.observe + parentClassSuffix) {
+        binder.find = subView.bindAtrPrefix + binder.observe + classSuffix;
       }
 
       if(!subView.bindings.hasOwnProperty(binder.find)) {
@@ -505,13 +553,13 @@ define([
     return vTemp;
   };
 
-  _export.Model = DWBackbone.Model.extend({
+  var Model = DWBackbone.Model.extend({
     /**
      * This should get into DW-Backbone @ some point. Fingers crossed.
      */
-    dispose:function() {
+    dispose: function() {
       for(var i in this.attributes) if(this.hasOwnProperty(i)) {
-        if(((this.attributes[i] instanceof Backbone.Model) === true) || ((this.attributes[i] instanceof _export.Collection) === true)) {
+        if(((this.attributes[i] instanceof Backbone.Model) === true) || ((this.attributes[i] instanceof DWBackbone.Collection) === true)) {
           try {
             this.attributes[i].dispose();
           } catch (e) {
@@ -548,22 +596,33 @@ define([
    *
    * @type {any}
    */
-  CollectionView = _export.CollectionView = _export.View.extend({
+  var CollectionView = View.extend({
     Model:DWBackbone.Collection,
-    firstPage:1,
-    bindings:{'.w-atr-page':'page', '.w-atr-pageLength':'pageLength'},
-    constructor:function(options) {
+    firstPage: 1,
+    bindings: { //here for documentation mostly
+      //'.w-atr-page':'page',
+      //'.w-atr-pageLength':'pageLength'
+    },
+    templateCompiler: fnTemplateCompiler,
+    constructor: function(options) {
       var $el,
         collection = false,
-        hbs = (options.hbs)? options.hbs : this.hbs,
-        hbsData = {},
+        tpl = (options.tpl)? options.tpl : this.tpl,
+        tplData = {},
         model;
-
       this.firstPage = (this.firstPage === 0)? 0 : 1;
       this.childViews = {};
       if(!options.el) {
         throw new Error('CollectionView must be passed an element on construction!');
       }
+      if(!options.hasOwnProperty('parentView')) {
+        throw new Error('CollectionView must be passed a parentView on construction!')
+      }
+      this.parentView = options.parentView;
+
+      this.bindings[options.parentView.bindAtrPrefix + 'page'] = 'page';
+      this.bindings[options.parentView.bindAtrPrefix + 'pageLength'] = 'pageLength';
+
       if(!this.atrViews) {
         this.atrViews = {};
       }
@@ -586,14 +645,25 @@ define([
         throw new Error("CollectionView: must have a this.Model, or have .model instance passed on construction. These must be instanceof Backbone.Collection");
       }
 
-      if (typeof hbs === 'string') {
-        hbs = Handlebars.compile(hbs);
-      }
-      if(this.hbsData) {
-        hbsData = this.hbsData;
+
+      if (typeof tpl === 'string') {
+        //while the default template compiler may be needed elsewhere in this view,
+        //because in most cases CollectionView acts like magic wiring it will not need to be extended
+        //Therefor use the ChildView's compiler
+        if(this.templateCompiler !== fnTemplateCompiler) {
+          tpl = this.templateCompiler(tpl);
+        } else {
+          tpl = this.ChildView.templateCompiler(tpl);
+        }
+      } else if(!tpl) {
+        tpl = function() { return '';}
       }
 
-      $el = jQuery(hbs(hbsData));
+      if(this.tplData) {
+        tplData = this.tplData;
+      }
+
+      $el = jQuery(tpl(tplData));
 
       if(options.el) {
         this.el = options.el;
@@ -608,7 +678,7 @@ define([
 
       this.findControlElements();
 
-      this.$collection = this.$elf('.w-collection:first');
+      this.$collection = this.$elf('.' + options.parentView.bindPrefix + '-collection:first');
       if(this.$collection.length === 0) {
         this.$collection = this.$el;
       }
@@ -631,7 +701,7 @@ define([
 
       this.setModel(collection);
     },
-    setModel:function(collection) {
+    setModel: function(collection) {
       if(this.collection === collection) {
         return this;
       }
@@ -661,13 +731,12 @@ define([
      * removes and adds child views as needed, then orders them.
      * assumes sort, etc have already been called;
      */
-    renderChildViews:function() {
+    renderChildViews: function() {
       var page = this.model.get('page') - this.firstPage,
         pageLength = parseInt(this.model.get('pageLength')),
         collection = this.collection,
         search = this.model.get('search'),
         searchBy = this.model.get('searchBy');
-
         if(search.length > 0 ) {
           collection = new this.collection.constructor(this.collection.filter(function(model) {
             return (model.get(searchBy).indexOf(search) > -1);
@@ -694,7 +763,7 @@ define([
       this.sortChildViews(collection);
 
     },
-    sortChildViews:function(collection) {
+    sortChildViews: function(collection) {
       var $lastEl = false, page, pageLength;
       if(!collection) {
         pageLength = this.model.get('pageLength');
@@ -715,19 +784,20 @@ define([
         $lastEl = this.childViews[model.cid].$el;
       }, this);
     },
-    newChildView:function(model) {
+    newChildView: function(model) {
       this.childViews[model.cid] = new this.ChildView({
         model:model,
         parentView:this.parentView
       });
+
       this.$collection.append(this.childViews[model.cid].$el);
     },
-    removeChildView:function(cid) {
+    removeChildView: function(cid) {
       this.childViews[cid].off(null, null, this);
       this.childViews[cid].remove();
       delete this.childViews[cid];
     },
-    remove:function() {
+    remove: function() {
       _.each(this.childViews, function(view) {
         view.off(null,null,this);
         view.remove();
@@ -737,18 +807,18 @@ define([
       delete this.parentView;
       return Backbone.View.prototype.remove.call(this);
     },
-    ctrlKeyupSearch:function(evt) {
+    ctrlKeyupSearch: function(evt) {
       var $search = $(evt.currentTarget);
       this.model.set('searchBy', $search.data('search-by'));
       this.model.set('search', $search.val());
     },
-    ctrlSortBy:function(evt) {
+    ctrlSortBy: function(evt) {
       this.model.set('sortBy', $(evt.currentTarget).data('sort-by'));
     },
-    ctrlFirst:function() {
+    ctrlFirst: function() {
       this.model.set({'page': this.firstPage});
     },
-    ctrlPrev:function() {
+    ctrlPrev: function() {
       var page = this.model.get('page');
       if(page > this.firstPage) {
         this.model.set({'page': (page-1)});
@@ -756,7 +826,7 @@ define([
         this.ctrlFirst();
       }
     },
-    ctrlNext:function() {
+    ctrlNext: function() {
       var page = this.model.get('page');
       var minus = (this.firstPage === 1)? 0 : 1;
       if(page < (Math.ceil(this.collection.length / this.model.get('pageLength')) - minus)) {
@@ -765,11 +835,15 @@ define([
         this.ctrlLast();
       }
     },
-    ctrlLast:function() {
+    ctrlLast: function() {
       var minus = (this.firstPage === 1)? 0 : 1;
       this.model.set({'page': (Math.floor(this.collection.length / this.model.get('pageLength')) - minus)});
     }
   });
 
-  return _.clone(_export);
+  exports.Model = Model;
+  exports.View = View;
+  exports.CollectionView = CollectionView;
+
+  return exports;
 });
