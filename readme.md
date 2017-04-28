@@ -1,41 +1,79 @@
 ## BonMot [![NPM version][npm-image]][npm-url]
 
-Easy to Use. Nicely scalable.
+**Easy to Use. Nicely scalable.**
 
 Backbone has a fantastic set of mature, reliable, and performant libraries. But getting them to work 
-together requires a ton of glue code. Marionette used to fill this gap, but applications have grown 
-more complex, and developer expectations are higher. Browser performance can be a real issue with 
-some of the more popular frameworks.
+together requires a ton of glue code. Modern frontend frameworks try to negotiate away that glue code
+ and lower the barrier to entry at the same time. While fine for small apps that don't do much between
+  page reloads, they perform poorly in larger apps, and can outright fight you when trying to do things 
+  'your way'.
 
-Enter BonMot. The js app-engine for your future.
+Enter BonMot. The js app-engine for your future. 
 
 BonMot eliminates much of the glue while still giving you control over how you create your application. 
-Under the hood BonMot uses [Stickit](https://github.com/NYTimes/backbone.stickit),
-[Handlebars](https://github.com/wycats/handlebars.js), 
+Under the hood BonMot uses [Stickit](https://github.com/NYTimes/backbone.stickit), 
 and [DW-Backbone](https://github.com/relativityboy/dw-backbone). It gives you all the power of these
 libraries while providing you with a much more terse, and clear way to express yourself.
 
 One of the best-parts, because most of BonMot's magic is done when you call Model.extend and 
 View.extend - using BonMot results in pages that run as fast as if you'd hand-rolled your code.
 
+Like Backbone, BonMot is *not* aimed at novice developers. You can learn Backbone and Bonmot at the same
+time, but you should know how to bind events to elements, the purpose of .prototype, and MVC/MV*.
 
-#### Transparency
+
+### Transparency
+
 BonMot is designed with transparency in mind. The philosophy is all of the convenience and reliability
 with none of the indirection. There may be times you need to do "*weird stuff* because management".
 Developers can get at and understand the guts of BonMot with ease, and the patterns in BonMot are such
 that 'awkward code' will stand out clearly, giving you opportunities to target tech-debt before it becomes
 a problem.
 
+#### Separate concerns, all in one place
+
+The way BonMot is built, you can put things where you want, but you're encouraged to keep your html, css, 
+and javascript for a component in separate files, but all in the same directory.
+
+### Bindings
+
+You can prefix your binding classes with whatever you want. I like 'w'; Airbnb prefers 'js'. You can choose whatever 
+you like by setting the *.bindPrefix* attribute in your view class.
  
 #### Attribute bindings
 
-To bind a data attribute from a Model into the page, for example 'name', in the html add the class *w-atr-name* 
-to the corresponding element, and add 'name' to the uiBindings array on the view *uiBindings:['name']*
+To bind a data attribute from a Model into the page
+ 
+```html
+<input class="js-atr-firstName">
+//or
+<span class="js-atr-lastName"></span>
+```
+```javascript
+//In your view declaration
+{
+  uiBindings:['firstName', 'lastName']
+}
+
+```
  
 This is enough to get you through most scenarios, but you can do a **lot** more.
 
 #### Control bindings
-To add a control to the page, define a control function in your View like *ctrlMakeAllTheThings:function(){...}*
+
+To add a control to the page
+```html
+<button class="js-ctrl-makeAllTheThings">Yep</button>
+```
+```javascript
+//In your view declaration
+{
+  ctrlMakeAllTheThings:function(event) {
+    //make all the things
+  }
+}
+
+```
 
 Bind that control to whatever html element you like by adding the class *w-ctrl-makeAllTheThings*
 
@@ -47,14 +85,24 @@ be created, and have it's model assigned and updated as the parent view's model 
 **This works for Collections** too! If you have a list of things BonMot will manage your views for you. 
 Support for collections comes with free in-browser support for next/prev/last/first/goto pagination, and search.
 
+**Template Engine Agnostic** declare whatever template engine you want, or none. You may find BonMot is smart
+enough that you don't need one. (Originally written with built-in handlebars support, I decided it was a liability, 
+and with only one exeption, the example project's templates are static html). 
+
+BonMot is even smart enough to use the pre-existing html within its dom element if no tempalate has 
+been given to it. This is a big advantage in scenarios where server side devs really feel a need to 
+output html for insecurity reasons.
+
 #### Life Cycle Management
-Once your app is started, instantiating models and views can be as simple as handing a server response to 
-your root view. If the models change, so do the associated views, being updated, created, and deleted
-to reflect current state. If you need to do something peculiar, everything is easily accessible with
-classic Backbone and DW-Backbone 
+Once your app is started, instantiating models and views can be as simple as handing a servers response to 
+your root view. If the models change, so do the associated views. they're updated, created, and deleted
+to reflect current state of your model tree. 
+If you need to do something peculiar, everything is easily accessible with
+classic Backbone and DW-Backbone. 
 
 #### Contained
-If you have requirejs on your site, BonMot is easy to add to a small part of your page. Try it in a widget!
+If you use requirejs or some other AMD compatible loader on your site, BonMot is easy to add to a small 
+part of your page. Try it in a widget!
 
 #### Working Examples
 For an ever-evolving set of examples, see [bonmot-examples](https://github.com/relativityboy/bonmot-examples/)
