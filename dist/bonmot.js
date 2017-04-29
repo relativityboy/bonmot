@@ -230,10 +230,15 @@ define([
     injectUnique: function() {
       this.$el.attr('data-v-cid', this.cid);
       if(this.unique) {
-        if(typeof this.unique === 'function') {
-          this.$el.addClass(this.unique().split('.').join('-'));
-        } else {
-          this.$el.addClass(this.unique.split('.').join('-'));
+        switch (DWBackbone.isA(this.unique)) {
+          case 'function' :
+            this.$el.addClass(this.unique().split('.').join('-'));
+            break;
+          case 'string' :
+            this.$el.addClass(this.unique.split('.').join('-'));
+            break;
+          default :
+            throw new Error('If set, this.unique must be either a string or a function! data-v-cid:' + this.cid);
         }
       }
     },
@@ -678,7 +683,7 @@ define([
 
       this.findControlElements();
 
-      this.$collection = this.$elf('.' + options.parentView.bindPrefix + '-collection:first');
+      this.$collection = this.$elf(options.parentView.bindPrefix + '-collection:first');
       if(this.$collection.length === 0) {
         this.$collection = this.$el;
       }
