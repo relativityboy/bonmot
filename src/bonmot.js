@@ -841,8 +841,12 @@ define([
       }
     },
     ctrlLast: function() {
-      var minus = (this.firstPage === 1)? 0 : 1;
-      this.model.set({'page': (Math.floor(this.collection.length / this.model.get('pageLength')) - minus)});
+      var minus = (this.firstPage === 1)? 0 : 1,
+        page = (Math.ceil(this.collection.length / this.model.get('pageLength')) - minus);
+      if(page < this.firstPage) {
+        page = this.firstPage;
+      }
+      this.model.set({'page': page});
     }
   });
 
