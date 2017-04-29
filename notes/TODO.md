@@ -4,4 +4,5 @@
     * Add html output of collection length
     * Add html output of total pages
     * Add html configuration of firstPage
+* Better documentation around BonMot's ability to use in-situ html
 * router support - easy event subscription

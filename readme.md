@@ -22,13 +22,28 @@ Like Backbone, BonMot is *not* aimed at novice developers. You can learn Backbon
 time, but you should know how to bind events to elements, the purpose of .prototype, and MVC/MV*.
 
 
-### Transparency
+### Transparency & Testing
 
 BonMot is designed with transparency in mind. The philosophy is all of the convenience and reliability
-with none of the indirection. There may be times you need to do "*weird stuff* because management".
+with none of the indirection. There may be times you need to do "*weird stuff because management*".
 Developers can get at and understand the guts of BonMot with ease, and the patterns in BonMot are such
 that 'awkward code' will stand out clearly, giving you opportunities to target tech-debt before it becomes
 a problem.
+
+BonMot's internal structure makes test writing simple and clear, without the need for special injectors or 
+tooling above and beyond your regular test suite.
+```javascript
+    var view = new MyView({model:{firstName:'x', lastName:'z'}}); //some view you created
+    
+    assert(view.$el.find('js-atr-firstName').val() === 'x', 'firstName bound to the dom');
+    
+    //or
+    var model = new MyModel({firstName:'x', lastName:'z'}); //some model you created
+    var view = new MyView({model:model}); //some view you created
+        
+    assert(view.$el.find('js-atr-firstName').val() === 'x', 'firstName bound to the dom');
+```
+
 
 #### Separate concerns, all in one place
 

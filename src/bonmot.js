@@ -13,6 +13,7 @@ define([
 ) {
   var exports = _.clone(DWBackbone),
     CollectionView,
+    Model,
     View,
     vTemp, //here because pointers are a terrible thing to waste
     uniques = {};
@@ -558,7 +559,7 @@ define([
     return vTemp;
   };
 
-  var Model = DWBackbone.Model.extend({
+  Model = DWBackbone.Model.extend({
     /**
      * This should get into DW-Backbone @ some point. Fingers crossed.
      */
@@ -601,7 +602,7 @@ define([
    *
    * @type {any}
    */
-  var CollectionView = View.extend({
+  CollectionView = View.extend({
     Model:DWBackbone.Collection,
     firstPage: 1,
     bindings: { //here for documentation mostly
