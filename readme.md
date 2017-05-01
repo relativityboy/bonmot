@@ -1,5 +1,8 @@
 ## BonMot [![NPM version][npm-image]][npm-url]
 
+**Important note for moving from 4.3->5.0+ update your 'stickit' dependency name to 'backbone.stickit'. 
+(when using webpack you can probably remove the mapping entirely)
+
 **Easy to Use. Nicely scalable.**
 
 Backbone has a fantastic set of mature, reliable, and performant libraries. But getting them to work 
