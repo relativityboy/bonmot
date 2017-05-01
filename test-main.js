@@ -26,7 +26,7 @@ require.config({
     'jquery':'node_modules/jquery/dist/jquery',
     'handlebars':'node_modules/handlebars/dist/handlebars.amd',
     'text':'node_modules/requirejs-text/text',
-    'stickit':'node_modules/backbone.stickit/backbone.stickit',
+    'backbone.stickit':'node_modules/backbone.stickit/backbone.stickit',
     'backbone':'node_modules/backbone/backbone',
     'dw-backbone':'node_modules/dw-backbone/src/base',
     'bonmot':'dist/bonmot'

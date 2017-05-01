@@ -9,7 +9,7 @@ require.config({
     'jquery':'/libs/jquery/jquery',
     'handlebars':'/libs/handlebars/handlebars.amd',
     'text':'/libs/requirejs-text/text',
-    'stickit':'/libs/stickit/backbone.stickit',
+    'backbone.stickit':'/libs/stickit/backbone.stickit',
     'underscore':'/libs/underscore/underscore-min',
     'backbone':'/libs/backbone/backbone',
     'dw-backbone':'/libs/dw-backbone/src/base',

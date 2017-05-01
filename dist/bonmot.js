@@ -2,7 +2,7 @@ define([
   'underscore',
   'backbone',
   'jquery',
-  'stickit',
+  'backbone.stickit',
   'dw-backbone'
 ], function(
   _,

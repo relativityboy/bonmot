@@ -45,7 +45,7 @@ tooling above and beyond your regular test suite.
 ```
 
 
-#### Separate concerns, all in one place
+#### Separation of concerns, all in one place
 
 The way BonMot is built, you can put things where you want, but you're encouraged to keep your html, css, 
 and javascript for a component in separate files, but all in the same directory.
@@ -60,8 +60,9 @@ you like by setting the *.bindPrefix* attribute in your view class.
 To bind a data attribute from a Model into the page
  
 ```html
+<!-- in your html, depending on if .bindPrefix:'.w' -->
 <input class="js-atr-firstName">
-//or
+<!-- or bindPrefix:'.js' -->
 <span class="js-atr-lastName"></span>
 ```
 ```javascript
@@ -69,10 +70,10 @@ To bind a data attribute from a Model into the page
 {
   uiBindings:['firstName', 'lastName']
 }
-
 ```
  
-This is enough to get you through most scenarios, but you can do a **lot** more.
+This is enough to get you through most scenarios. You can add models right away, update them, or even change them.
+ but you can do a **lot** more than simple values.
 
 #### Control bindings
 
@@ -92,7 +93,7 @@ To add a control to the page
 
 Bind that control to whatever html element you like by adding the class *w-ctrl-makeAllTheThings*
 
-#### Easy Views
+#### Views Are Easy
 **Easily nest Models and Views** on complex pages. Declare a view, and set it as a child-view 
 on another view via *.atrViews*. It will automatically 
 be created, and have it's model assigned and updated as the parent view's model is updated.
@@ -118,6 +119,19 @@ classic Backbone and DW-Backbone.
 #### Contained
 If you use requirejs or some other AMD compatible loader on your site, BonMot is easy to add to a small 
 part of your page. Try it in a widget!
+
+#### The App is the Model Tree
+
+That's not true, but the Model Tree IS the source of truth for the app. If the model changes, the view keeps up.
+```javascript
+/**
+* On a personal note, I keep hearing about "hoisting values" from other modern frameworks. IMO, hoisting is a load of
+* garbage. IMO, a tree is the way to go. Little views like leaves, and when the trunk sways, the branches and the leaves
+* do the same.
+* 
+* Trees rock. Hoisting is lame.
+*/
+```
 
 #### Working Examples
 For an ever-evolving set of examples, see [bonmot-examples](https://github.com/relativityboy/bonmot-examples/)
