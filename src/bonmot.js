@@ -169,8 +169,18 @@ define([
 
       this.childViews = {};
 
-      if(options.model && !(options.model instanceof this.Model)) {
-        options.model = new this.Model(options.model);
+      if(options.model) {
+        if(!this.Model) {
+          if(! (options.model instanceof DWBackbone.Model) ) {
+            throw new Error('No Model declared on this View, and passed in .model is not an instance of DWBackbone.Model ');
+          }
+        } else if(! (options.model instanceof this.Model) ) {
+          if(options.model instanceof Backbone.Model) {
+            throw new Error('Attempting to pass a model that is not an instance or instance child of this View.Model');
+          }
+          options.model = new this.Model(options.model);
+        }
+
       }
       if(this.needsModel && (typeof options !== 'object' || !options.hasOwnProperty('model'))) {
         throw new Error('This View requires a model on instantiation. (.needsModel == true in View declaration  )');

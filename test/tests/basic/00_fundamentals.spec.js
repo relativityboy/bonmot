@@ -41,6 +41,9 @@ define(['hbs!test/resources/index', 'jquery','underscore', 'bonmot', 'hbs!./fund
       expect(person.model.get('lastName')).to.equal(personData.lastName);
     });
 
+    it("uses hydrated model if .Model not declared");
+    it("uses hydrated correct model instance if .Model declared");
+    it("throws error on wrong Model instance if .Model declared");
 
     describe("attribute binding", function() {
       beforeEach(fnBfe);
