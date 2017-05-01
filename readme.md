@@ -36,15 +36,18 @@ a problem.
 BonMot's internal structure makes test writing simple and clear, without the need for special injectors or 
 tooling above and beyond your regular test suite.
 ```javascript
-    var view = new MyView({model:{firstName:'x', lastName:'z'}}); //some view you created
+  //some view you created by extending Bonmot.View
+  var view = new MyView({model:{firstName:'x', lastName:'z'}}); 
+  // $elf is an alias of view.$el.find()
+  assert(view.$elf('js-atr-firstName').val() === 'x', 'firstName bound to the dom');
     
-    assert(view.$el.find('js-atr-firstName').val() === 'x', 'firstName bound to the dom');
-    
-    //or
-    var model = new MyModel({firstName:'x', lastName:'z'}); //some model you created
-    var view = new MyView({model:model}); //some view you created
+  //or
+  
+  //some model you created by extending Bonmot.Model
+  var model = new MyModel({firstName:'x', lastName:'z'}); 
+  var view = new MyView({model:model}); 
         
-    assert(view.$el.find('js-atr-firstName').val() === 'x', 'firstName bound to the dom');
+  assert(view.$elf('js-atr-firstName').val() === 'x', 'firstName bound to the dom');
 ```
 
 
