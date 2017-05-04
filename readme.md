@@ -1,6 +1,6 @@
-## BonMot [![NPM version][npm-image]][npm-url]
+## BonMot [![NPM version][npm-image]][npm-url] [![Join the chat at https://gitter.im/bonmotjs/Lobby](https://badges.gitter.im/bonmotjs/Lobby.svg)](https://gitter.im/bonmotjs/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Join the chat at https://gitter.im/bonmotjs/Lobby](https://badges.gitter.im/bonmotjs/Lobby.svg)](https://gitter.im/bonmotjs/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 
 **Important note for moving from 4.3->5.0+ update your 'stickit' dependency name to 'backbone.stickit'. 
 (when using webpack you can probably remove the mapping entirely)
