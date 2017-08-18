@@ -408,7 +408,7 @@ define([
 
       delete this.options;
       delete this.parentView;
-      console.log('Test deleteNodeOnRemoveAlways!! ');
+      //console.log('Test deleteNodeOnRemoveAlways!! ');
       if(!this.deleteNodeOnRemoveAlways && this.elOriginalInnerHTML.indexOf('+') === 0) {
         this.$el.html(this.elOriginalInnerHTML.substring(1));
         this.setElement(null);
