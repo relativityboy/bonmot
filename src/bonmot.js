@@ -11,6 +11,7 @@ define([
   Stickit,
   DWBackbone
 ) {
+
   var exports = _.clone(DWBackbone),
     CollectionView,
     Model,
@@ -19,7 +20,7 @@ define([
     uniques = {};
 
   var fnTemplateCompiler = function(tpl) {
-    return function() { return tpl};
+    return function() { return tpl; };
   };
 
   /**
@@ -152,6 +153,15 @@ define([
     clearUIOnUndefinedModel: true,
 
     /**
+     * If true, always deletes View.el when .remove() is called.
+     * If false and .el is passed to the constructor, will preserve the original node and even put back the html that
+     * was within it. (classes and attributes on the original node may have been modified)
+     */
+    //You need to do the above!!!!
+    deleteNodeOnRemoveAlways:false,
+    elOriginalInnerHTML:'',
+
+    /**
      * convenience function for finding elements within this view. Use it!
      * @param cssExpr
      * @returns {*}
@@ -193,7 +203,7 @@ define([
       if (typeof tpl === 'string') {
         tpl = this.templateCompiler(tpl);
       } else if(!tpl) {
-        tpl = function() { return '';}
+        tpl = function() { return ''; };
       }
 
       if(this.tplData) {
@@ -209,6 +219,9 @@ define([
       if(options.el) {
         this.el = options.el;
         this.$el = jQuery(options.el);
+        if(!this.deleteNodeOnRemoveAlways) {
+          this.elOriginalInnerHTML = '+' + $el.html();
+        }
         if($el.html()) {
           this.$el.html($el);
         }
@@ -391,8 +404,15 @@ define([
         view.off(null,null,this);
         view.remove();
       }, this);
+
+
       delete this.options;
       delete this.parentView;
+      console.log('Test deleteNodeOnRemoveAlways!! ');
+      if(!this.deleteNodeOnRemoveAlways && this.elOriginalInnerHTML.indexOf('+') === 0) {
+        this.$el.html(this.elOriginalInnerHTML.substring(1));
+        this.setElement(null);
+      }
       return Backbone.View.prototype.remove.call(this);
     }
   });
@@ -604,7 +624,8 @@ define([
    * Model instance at .model so that event and attribute bindings are created and handled correctly.
    * This model is instantiated in the constructor, and NEVER changes.
    *
-   * So .setModel() takes a collection.
+   * So .setModel() takes a collection, or undefined
+   *
    *
    * There's a lot of code in this contstructor's class that's been duplicated from the primary View
    * constructor... that's because we can't call it directly, as it calls 'setModel' at the end
@@ -612,6 +633,7 @@ define([
    *
    * @type {any}
    */
+  window.cViews = [];
   CollectionView = View.extend({
     Model:DWBackbone.Collection,
     firstPage: 1,
@@ -621,6 +643,7 @@ define([
     },
     templateCompiler: fnTemplateCompiler,
     constructor: function(options) {
+      cViews.push(this);
       var $el,
         collection = false,
         tpl = (options.tpl)? options.tpl : this.tpl,
@@ -632,7 +655,7 @@ define([
         throw new Error('CollectionView must be passed an element on construction!');
       }
       if(!options.hasOwnProperty('parentView')) {
-        throw new Error('CollectionView must be passed a parentView on construction!')
+        throw new Error('CollectionView must be passed a parentView on construction!');
       }
       this.parentView = options.parentView;
 
@@ -672,7 +695,7 @@ define([
           tpl = this.ChildView.templateCompiler(tpl);
         }
       } else if(!tpl) {
-        tpl = function() { return '';}
+        tpl = function() { return ''; };
       }
 
       if(this.tplData) {
@@ -731,17 +754,17 @@ define([
           delete this.childViews[key];
         }, this);
         this.collection.off(null, null, this);
-        delete this.collection;
         return this;
       }
 
       this.collection = collection;
       this.renderChildViews();
-
-      this.collection.on('add', this.renderChildViews, this);
-      this.collection.on('remove', this.renderChildViews, this);
-      this.collection.on('reset', this.renderChildViews, this);
-      this.collection.on('sort', this.renderChildViews, this);
+      if(this.collection) {
+        this.collection.on('add', this.renderChildViews, this);
+        this.collection.on('remove', this.renderChildViews, this);
+        this.collection.on('reset', this.renderChildViews, this);
+        this.collection.on('sort', this.renderChildViews, this);
+      }
     },
     /**
      * removes and adds child views as needed, then orders them.
@@ -763,7 +786,7 @@ define([
             this.model.set('page', ((page - 1) + this.firstPage));
             return;
           }
-          collection = new this.collection.constructor(collection.slice(page * pageLength, (page + 1) * pageLength))
+          collection = new this.collection.constructor(collection.slice(page * pageLength, (page + 1) * pageLength));
         }
 
       _.each(this.childViews, function(view, cid) {
@@ -814,11 +837,15 @@ define([
       delete this.childViews[cid];
     },
     remove: function() {
+      window.blowingup = this;
       _.each(this.childViews, function(view) {
         view.off(null,null,this);
         view.remove();
       }, this);
-      this.collection.off(null,null,this);
+      if(this.collection) {
+        this.collection.off(null,null,this);
+      }
+
       delete this.options;
       delete this.parentView;
       return Backbone.View.prototype.remove.call(this);
