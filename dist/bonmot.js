@@ -408,7 +408,7 @@ define([
 
       delete this.options;
       delete this.parentView;
-      console.log('Test deleteNodeOnRemoveAlways!! ');
+      //console.log('Test deleteNodeOnRemoveAlways!! ');
       if(!this.deleteNodeOnRemoveAlways && this.elOriginalInnerHTML.indexOf('+') === 0) {
         this.$el.html(this.elOriginalInnerHTML.substring(1));
         this.setElement(null);
@@ -633,7 +633,6 @@ define([
    *
    * @type {any}
    */
-  window.cViews = [];
   CollectionView = View.extend({
     Model:DWBackbone.Collection,
     firstPage: 1,
@@ -643,7 +642,6 @@ define([
     },
     templateCompiler: fnTemplateCompiler,
     constructor: function(options) {
-      cViews.push(this);
       var $el,
         collection = false,
         tpl = (options.tpl)? options.tpl : this.tpl,
@@ -837,7 +835,6 @@ define([
       delete this.childViews[cid];
     },
     remove: function() {
-      window.blowingup = this;
       _.each(this.childViews, function(view) {
         view.off(null,null,this);
         view.remove();
